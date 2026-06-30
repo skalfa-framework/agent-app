@@ -24,6 +24,7 @@ Before creating any plan (such as `implementation_plan.md`) or performing any co
     *   To understand the available API endpoints, request payloads, and response structures, the agent **MUST** read the backend API documentation located in the backend's `./docs/` directory (or the path specified in the project's root `README.md`).
     *   The agent **MUST NOT** analyze or read the backend source code.
     *   If a required API endpoint, query parameter, or response field is missing or not yet documented, the agent **MUST NOT** guess or implement placeholder mock logic. Instead, the agent **MUST** write a clear "API Request" detailing the required endpoint, method, payload, and response, and present it to the user in the chat or list it under `## Open Questions` in the implementation plan.
+*   **Feature Specification Alignment**: If the task involves modifying or extending an existing feature, the agent **MUST** check for and read the corresponding feature specification file in `./.agent/records/features/<feature-slug>.md` to understand the existing design, architecture, and business rules before proposing any changes.
 
 ---
 
@@ -143,4 +144,5 @@ A frontend task is considered **DONE** only when:
 6.  The feature is verified in the integrated browser under multiple simulated scenarios.
 7.  The feature map in `.agent/records/features.md` is updated with any new/modified pages and routes.
 8.  The ledger (`.agent/records/ledger.jsonl`) and state (`.agent/records/state.json`) are updated.
+9.  The feature specification file in `./.agent/records/features/<feature-slug>.md` is created (for new features) or updated (for modified features) using the standard template to document the implementation details and decisions.
 

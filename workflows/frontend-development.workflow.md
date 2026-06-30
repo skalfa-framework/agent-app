@@ -45,6 +45,7 @@ All detailed logs, plans, and code diffs must be stored as separate files in `./
 *   Verify how the requested UI feature fits into the existing modules and outline described in `README.md`.
 *   **Knowledge Mapping**: The agent MUST read the Knowledge Registry in `./.agent/knowledges/registry.md`. Identify and read ONLY the specific knowledge files (e.g., `form-supervision.md`, `api.md`) that are directly relevant to the components and utilities required for the task. Reading unrelated knowledge files is forbidden to prevent context bloat.
 *   **API Documentation Alignment**: The agent **MUST** read the backend API documentation in the backend's `./docs/` folder to understand available endpoints and schemas. Reading the backend source code is forbidden. If any required endpoint or field is missing, draft an "API Request" detailing the requirements.
+*   **Feature Spec Alignment**: If modifying or extending an existing feature, the agent **MUST** check for and read `./.agent/records/features/<feature-slug>.md` to understand the previous implementation details, business logic, and design rationale.
 
 
 ### Step 1.2 — Requirement Analysis & Clarification (Ask if Unclear)
@@ -132,6 +133,12 @@ Before running the app, the agent MUST verify that it passes TypeScript compile 
     *   Patch: `./.agent/records/activities/act-<num>-diff-<feature>.patch`
 
 ### Step 5.2 — Ledger Finalization
+*   **Feature Spec Update**: Create (for new features) or update (for modified features) the feature specification file at `./.agent/records/features/<feature-slug>.md` using the standard template:
+    *   **Goal & Purpose**: Why was the feature created?
+    *   **Technical Architecture & Components**: List of Models, Controllers/Routes, Services/Hooks, and UI Components (pages, constructs, structures).
+    *   **Business Logic & Flow**: Step-by-step execution flow and validation/permission guards.
+    *   **Key Design Decisions & Rationale**: Rationale behind technical choices.
+    *   **Verification & Testing**: Test files and scenarios executed.
 *   Update the feature map in `./.agent/records/features.md` with any new/modified pages and routes.
 *   Record the completion event in `ledger.jsonl`:
     ```json
