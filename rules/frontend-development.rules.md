@@ -13,7 +13,17 @@ If an implementation violates these rules $\rightarrow$ **the task MUST NOT be c
 
 ---
 
-## 1. Core Principles (Binding)
+## 1. Mandatory Research & Planning Phase (Registry-First)
+
+Before creating any plan (such as `implementation_plan.md`) or performing any codebase analysis/research:
+*   The agent **MUST** read the local Knowledge Registry at `./.agents/knowledges/registry.md` to understand the available technical services and utilities.
+*   Identify which specific utilities (e.g. API, Auth, Form, Caching, Socket) or technical concepts are required for the task.
+*   The agent **MUST** open and read those specific knowledge files in `./.agents/knowledges/` **BEFORE** exploring the codebase or proposing any changes. This prevents unnecessary codebase searches and ensures alignment with Skalfa App patterns.
+*   **Clarification & No-Assumptions**: If the user prompt or the project's `README.md` is ambiguous, incomplete, or lacks specific details (such as UI fields, specific designs, or business logic edge cases), the agent **MUST NOT** make silent assumptions. The agent **MUST** ask the user for clarification directly in the chat or list the questions under the `## Open Questions` section of the implementation plan and wait for feedback.
+
+---
+
+## 2. Core Principles (Binding)
 
 ### 1.1 Component-Driven Architecture
 *   UI must be built by composing components, not by duplicating JSX.
@@ -51,7 +61,7 @@ If an implementation violates these rules $\rightarrow$ **the task MUST NOT be c
 
 ---
 
-## 2. Coding Patterns
+## 3. Coding Patterns
 
 ### 2.1 Reuse of Existing Components (Component Reuse Discipline)
 *   As long as an existing component (either in `base.components` or `construct.components`) can satisfy the requirement, the agent MUST reuse it.
@@ -65,7 +75,7 @@ If an implementation violates these rules $\rightarrow$ **the task MUST NOT be c
 
 ---
 
-## 3. Code Formatting (Vertical Alignment)
+## 4. Code Formatting (Vertical Alignment)
 
 *   Object keys, variable assignments, and type definitions MUST be aligned vertically in block form (column-based alignment). Use spaces to align `:` and `=` consistently within the same block.
     *   *Example*:
@@ -95,9 +105,9 @@ If an implementation violates these rules $\rightarrow$ **the task MUST NOT be c
 
 ---
 
-## 4. Code Modification Boundaries
+## 5. Code Modification Boundaries
 
-### 4.1 Writable Paths (agent MAY modify)
+### 5.1 Writable Paths (agent MAY modify)
 *   `app/**` (Next.js App Router pages, modules, and local `_constructs`, `_structures`, `_services` folders)
 *   `components/construct.components/**`
 *   `components/structure.components/**`
@@ -106,15 +116,19 @@ If an implementation violates these rules $\rightarrow$ **the task MUST NOT be c
 *   `schema/**`
 *   `.agent/records/**`
 
-### 4.2 Read-Only Paths (agent MUST NOT modify)
+### 5.2 Read-Only Paths (agent MUST NOT modify)
 *   `utils/**`
 *   `components/base.components/**`
 
 If a fix requires changes inside read-only paths, the agent MUST NOT modify the file, but must report it to the human as `fix_but_need_human`.
 
+### 5.3 README.md Modification Constraints
+*   The agent is allowed to add new features to the checklist in `README.md` (e.g., adding `- [ ] New Feature` when planning).
+*   **The agent MUST NOT mark any checklist items as completed (changing `[ ]` to `[x]`) in `README.md`.** Checking or marking the status of features in the `README.md` checklist is reserved exclusively for humans.
+
 ---
 
-## 5. Definition of DONE
+## 6. Definition of DONE
 
 A frontend task is considered **DONE** only when:
 1.  Skalfa App patterns and slug-like naming are strictly followed.
