@@ -1,229 +1,128 @@
-# Panduan Komponen: Komponen Input (`@components`)
+# Component Guide: Input Components (`@components`)
 
-Dokumen ini menjelaskan seluruh variasi komponen input kustom bawaan Skalfa App yang dapat digunakan secara mandiri untuk berinteraksi dengan pengguna.
+Skalfa App provides a comprehensive set of input components located under `components/base.components/input/`. These are primitive inputs designed to be used in forms.
 
 ---
 
-## 1. Input Teks Standar (`InputComponent`)
+## 1. Text Input (`InputComponent`)
 
-Komponen input teks dasar yang membungkus tag `<input>` HTML dengan fitur label, pesan error, ikon, saran otomatis (*suggestions*), dan transformasi teks.
+Standard single-line text input field.
 
 ```typescript
-interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label        ?: string;
-  tip          ?: string | ReactNode;
-  leftIcon     ?: any;                                            // Ikon FontAwesome kiri
-  rightIcon    ?: any;                                            // Ikon FontAwesome kanan
-  value        ?: any;
-  invalid      ?: string;                                         // Pesan kesalahan validasi
-  suggestions  ?: string[];                                       // Daftar saran pelengkapan otomatis
-  onlyAlphabet ?: boolean;                                        // Hanya mengizinkan huruf saja
-  uppercase    ?: boolean;                                        // Otomatis mengubah input menjadi HURUF BESAR
-  lowercase    ?: boolean;                                        // Otomatis mengubah input menjadi huruf kecil
-  onChange     ?: (value: any) => void;
+  error        ?: string;  // Error message displayed below the input
+  icon         ?: IconDefinition;
+  wrapperClass ?: string;
 }
+```
+### Example:
+```tsx
+import { InputComponent } from "@components";
+import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
+
+<InputComponent
+  label="Email Address"
+  type="email"
+  placeholder="enter your email"
+  icon={faEnvelope}
+/>
 ```
 
 ---
 
-## 2. Dropdown Pilihan (`SelectComponent`)
+## 2. Password Input (`InputPasswordComponent`)
 
-Komponen pilihan (select dropdown) kustom tingkat lanjut yang mendukung pencarian lokal, pemilihan jamak (*multiple*), serta pemuatan opsi langsung dari **API** atau **IndexedDB** secara otomatis.
+A password input field equipped with a built-in eye icon to toggle password visibility.
 
-```typescript
-interface SelectProps {
-  name                 : string;
-  label               ?: string;
-  placeholder         ?: string;
-  value               ?: string | number | (string | number)[];
-  invalid             ?: string;
-  multiple            ?: boolean;                                 // Memilih lebih dari satu (render sebagai chip)
-  clearable           ?: boolean;                                 // Tombol silang untuk menghapus pilihan
-  options             ?: SelectOptionProps[];                     // Opsi manual
-  searchable          ?: boolean;                                 // Input pencarian lokal
-  serverOptionControl ?: ApiType & { cacheName?: string | false };// Tarik opsi otomatis dari API
-  idbOptionControl    ?: { store: string, labelKey: string, valueKey: string }; // Tarik opsi dari IndexedDB
-  onChange            ?: (value: any, selectedData?: any) => void;
-}
+```tsx
+import { InputPasswordComponent } from "@components";
+
+<InputPasswordComponent
+  label="Password"
+  placeholder="Min 8 characters"
+/>
 ```
 
 ---
 
-## 3. Pilihan Ganda Checkbox (`InputCheckboxComponent`)
+## 3. Textarea Input (`TextareaComponent`)
 
-Komponen grup checkbox untuk memilih satu atau beberapa opsi sekaligus. Mendukung daftar opsi manual maupun dinamis dari server API.
+A multi-line text input field.
 
-### Antarmuka Komponen (`InputCheckboxProps`)
-```typescript
-interface InputCheckboxProps {
-  name                 : string;
-  label               ?: string;
-  vertical            ?: boolean;                                 // Susunan vertikal (default: horizontal)
-  value               ?: (string | number)[];                     // Array nilai terpilih
-  options             ?: { value: string | number; label: string }[]; // Opsi manual
-  serverOptionControl ?: ApiType;                                 // Tarik opsi otomatis dari API
-  onChange            ?: (value: (string | number)[]) => void;
-}
+```tsx
+import { TextareaComponent } from "@components";
+
+<TextareaComponent
+  label="Description"
+  placeholder="Write something..."
+  rows={4}
+/>
 ```
 
 ---
 
-## 4. Pilihan Tunggal Radio (`InputRadioComponent`)
+## 4. Select Input (`SelectComponent`)
 
-Komponen grup radio button untuk memilih tepat satu opsi dari daftar pilihan yang tersedia.
+A dropdown selection list.
 
-### Antarmuka Komponen (`InputRadioProps`)
 ```typescript
-interface InputRadioProps {
-  name                 : string;
-  label               ?: string;
-  vertical            ?: boolean;                                 // Susunan vertikal (default: horizontal)
-  value               ?: string | number;                         // Nilai terpilih
-  options             ?: { value: string | number; label: string }[];
-  serverOptionControl ?: ApiType;
-  onChange            ?: (value: string | number) => void;
-}
-```
-
----
-
-## 5. Input Nominal Rupiah (`InputCurrencyComponent`)
-
-Komponen input angka khusus mata uang yang secara otomatis memformat input angka mentah menjadi nominal berformat Rupiah dengan pemisah ribuan saat pengguna mengetik.
-
-### Antarmuka Komponen (`InputCurrencyProps`)
-```typescript
-interface InputCurrencyProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label    ?: string;
-  value    ?: number;                                             // Nilai berupa angka murni (number)
-  format   ?: { locale?: string; currency?: string };             // Default: id-ID & IDR
-  onChange ?: (value: number) => void;                            // Mengembalikan angka murni (bukan terformat)
+  options   : { value: any; label: string }[];
+  error    ?: string;
 }
+```
+### Example:
+```tsx
+import { SelectComponent } from "@components";
+
+<SelectComponent
+  label="Gender"
+  options={[
+    { value: "M", label: "Male" },
+    { value: "F", label: "Female" }
+  ]}
+/>
 ```
 
 ---
 
-## 6. Input Tanggal (`InputDateComponent`)
+## 5. Checkbox & Radio (`CheckboxComponent` / `RadioComponent`)
 
-Komponen pemilih tanggal (date picker). Pada layar desktop menampilkan popover kalender di dekat input, sedangkan pada layar seluler (mobile) otomatis memicu **BottomSheet** dari bawah.
+Used for binary selections or selecting from a list of options.
 
-```typescript
-interface InputDateProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
-  label    ?: string;
-  value    ?: string;                                             // Format ISO (YYYY-MM-DD)
-  onChange ?: (value: string) => void;
-}
+```tsx
+import { CheckboxComponent, RadioComponent } from "@components";
+
+// Checkbox
+<CheckboxComponent label="I agree to terms and conditions" checked={true} />
+
+// Radio Group
+<div className="flex gap-4">
+  <RadioComponent label="Option A" name="group1" value="A" />
+  <RadioComponent label="Option B" name="group1" value="B" />
+</div>
 ```
 
 ---
 
-## 7. Input Waktu (`InputTimeComponent`)
+## 6. Toggle Switch (`ToggleComponent`)
 
-Komponen pemilih waktu (time picker) kustom dengan visualisasi pemutar jam dan menit yang mudah disentuh.
+A switch UI element representing a boolean state.
 
-```typescript
-interface InputTimeProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
-  label    ?: string;
-  value    ?: string;                                             // Format waktu (HH:mm)
-  onChange ?: (value: string) => void;
+```tsx
+import { ToggleComponent } from "@components";
+import { useState } from "react";
+
+export function Settings() {
+  const [enabled, setEnabled] = useState(false);
+  return (
+    <ToggleComponent
+      label="Enable Notifications"
+      checked={enabled}
+      onChange={() => setEnabled(!enabled)}
+    />
+  );
 }
 ```
-
----
-
-## 8. Input Tanggal & Waktu (`InputDatetimeComponent`)
-
-Komponen pemilih gabungan tanggal dan waktu sekaligus. Menyediakan bilah tab (`TabbarComponent`) internal untuk beralih antara memilih "Tanggal" dan "Waktu".
-
-```typescript
-interface InputDateTimeProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
-  label    ?: string;
-  value    ?: string;                                             // Format tanggal-waktu ISO
-  onChange ?: (value: string) => void;
-}
-```
-
----
-
-## 9. Unggah Gambar & Potong (`InputImageComponent`)
-
-Komponen unggah gambar dengan pratinjau gambar, area seret-dan-taruh (*drag-and-drop*), serta **fitur pemotongan gambar (crop modal)** sebelum disimpan.
-
-```typescript
-interface InputImageProps {
-  name      : string;
-  label    ?: string;
-  value    ?: string | File;
-  aspect   ?: string;                                             // Rasio pemotongan, contoh: "1/1", "16/9"
-  onChange ?: (file?: File | null) => void;                       // Mengembalikan objek File hasil potongan
-}
-```
-
----
-
-## 10. Unggah Dokumen (`InputDocumentComponent`)
-
-Komponen pengunggahan berkas dokumen umum (seperti PDF, Excel, Word, dll.) dengan visualisasi ikon ekstensi file serta penampil dokumen bawaan (*document viewer*).
-
-```typescript
-interface InputDocumentProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
-  label    ?: string;
-  value    ?: any;                                                // URL berkas atau objek File
-  onChange ?: (value: any) => void;
-}
-```
-
----
-
-## 11. Verifikasi OTP (`InputOtpComponent`)
-
-Komponen kotak input khusus OTP (One-Time Password) yang membagi input menjadi beberapa kotak karakter terpisah.
-
-```typescript
-interface InputOtpProps {
-  name     : string;
-  label   ?: string;
-  length  ?: number;                                              // Jumlah kotak karakter (default: 6)
-  value   ?: string;
-  onChange?: (value: string) => void;
-}
-```
-
----
-
-## 12. Kata Sandi & Konfirmasi (`InputPasswordComponent`)
-
-Komponen khusus untuk input kata sandi yang memiliki indikator kekuatan sandi serta kolom konfirmasi kata sandi otomatis jika diaktifkan.
-
-```typescript
-interface InputPasswordProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
-  label    ?: string;
-  value    ?: string;
-  onChange ?: (value: string, confirmValue?: string) => void;
-}
-```
-
----
-
-## 13. Peta & Koordinat Lokasi (`InputMapComponent`)
-
-Komponen input khusus pemilihan lokasi geospasial menggunakan Google Maps API. Pengguna dapat memilih lokasi dengan mengklik peta atau mengetik alamat di kotak pencarian.
-
-### Antarmuka Komponen (`InputMapProps`)
-```typescript
-interface InputMapProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
-  label    ?: string;
-  value    ?: ValueMapProps;                                      // Koordinat { lat, lng, address }
-  onChange ?: (value: ValueMapProps) => void;
-}
-
-interface ValueMapProps {
-  lat      : number | null;
-  lng      : number | null;
-  address ?: string;
-}
-```
-*Fitur Utama*:
-*   **Auto-Geocoding**: Mengklik koordinat pada peta otomatis memicu pencarian nama alamat secara terbalik (*reverse geocoding*) via Google Maps Geocoding API.
-*   **Lokasi Saat Ini**: Menyediakan tombol pintas dengan ikon target (`faLocationCrosshairs`) untuk mendeteksi koordinat GPS pengguna secara instan (*geolocation*).
-*   **Mobile-Friendly**: Pada perangkat seluler, tampilan peta otomatis dimuat di dalam laci `BottomSheet` agar nyaman dioperasikan.

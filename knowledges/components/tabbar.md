@@ -1,79 +1,68 @@
-# Panduan Komponen: Bar Tab (Tabbar) (`@components`)
+# Component Guide: Tabbar (`TabbarComponent`)
 
-`TabbarComponent` adalah komponen pemindah tab horizontal di Skalfa App yang digunakan untuk beralih tampilan antar kategori data, memfilter tabel, atau memisahkan panel informasi tanpa melakukan navigasi rute halaman.
+`TabbarComponent` is a tab navigation component in Skalfa App. It is used to switch between different views or sub-sections within a page without changing the URL.
 
-## 1. Antarmuka Komponen (`TabbarProps`)
+---
+
+## 1. Component Interface (`TabbarProps`)
 
 ```typescript
 export interface TabbarProps {
-  items      : string[] | TabbarItemProps[];          // Daftar item tab (bisa array string atau objek)
-  active    ?: string | number;                       // Nilai tab yang sedang aktif
-  onChange  ?: (value: string | number) => void;      // Callback saat tab diklik
-  className ?: string;                                // Kustom class Tailwind
-}
-
-interface TabbarItemProps {
-  label : string;                                     // Label teks yang ditampilkan di UI
-  value : string | number;                            // Nilai data internal tab
+  items: {
+    key      : string;               // Unique identifier for the tab
+    label    : ReactNode;             // Tab title text or JSX
+    icon    ?: IconDefinition;        // Optional FontAwesome icon displayed before the title
+    content  : ReactNode;             // The panel content displayed when active
+  }[];
+  activeKey ?: string;                // The key of the tab open by default
+  onChange  ?: (key: string) => void; // Callback when the active tab changes
+  className ?: string;                // Custom Tailwind CSS classes
 }
 ```
 
 ---
 
-## 2. Fitur Utama
+## 2. Key Features
 
-*   **Pilihan Aktif Berbentuk Kapsul**: Item tab yang aktif akan otomatis memiliki latar belakang putih transparan (`bg-white/60`) dengan font tebal (`font-semibold`) dan warna teks primer (`text-primary`).
-*   **Efek Hover Halus**: Tab non-aktif memiliki efek hover latar belakang lembut dan kursor pointer untuk kenyamanan interaksi pengguna.
-*   **Dua Tipe Data Input**:
-    *   *Sederhana (Array String)*: Jika data label dan value sama (contoh: `["Semua", "Aktif", "Batal"]`).
-    *   *Kompleks (Array Objek)*: Jika label yang ditampilkan berbeda dengan value pemrosesan data (contoh: `[{ label: "Sudah Bayar", value: "paid" }]`).
+*   **Icon Integration**: Easily add FontAwesome icons alongside text titles.
+*   **Controlled & Uncontrolled Modes**: Can be used as a controlled component (`activeKey` + `onChange`) or let it manage its own active tab state internally.
+*   **Lazy Rendering**: Content of inactive tabs is kept hidden using CSS classes (`hidden`) to preserve state and avoid unnecessary re-renders of tab views.
 
 ---
 
-## 3. Contoh Penggunaan
+## 3. Usage Example
 
-### A. Tab Sederhana untuk Filter Kategori
 ```tsx
-import React, { useState } from "react";
 import { TabbarComponent } from "@components";
+import { faUser, faShieldAlt, faBell } from "@fortawesome/free-solid-svg-icons";
 
-export function CategoryFilter() {
-  const [activeTab, setActiveTab] = useState("Semua");
+export function SettingsTabs() {
+  const tabs = [
+    {
+      key:     "profile",
+      label:   "Profile Settings",
+      icon:    faUser,
+      content: <div className="p-4">Profile edit form goes here...</div>
+    },
+    {
+      key:     "security",
+      label:   "Security & Password",
+      icon:    faShieldAlt,
+      content: <div className="p-4">Change password form goes here...</div>
+    },
+    {
+      key:     "notifications",
+      label:   "Notification Preferences",
+      icon:    faBell,
+      content: <div className="p-4">Configure email/push alerts...</div>
+    }
+  ];
 
   return (
-    <TabbarComponent
-      active={activeTab}
-      items={["Semua", "Makanan", "Minuman", "Pakaian"]}
-      onChange={(val) => setActiveTab(String(val))}
-    />
+    <div className="bg-white border rounded-lg shadow-sm">
+      <TabbarComponent items={tabs} activeKey="profile" />
+    </div>
   );
 }
 ```
-
-### B. Tab Kompleks dengan Nilai Data Berbeda
-```tsx
-import React, { useState } from "react";
-import { TabbarComponent } from "@components";
-
-export function TransactionTabs({ onFilterChange }) {
-  const [status, setStatus] = useState("all");
-
-  const handleTabChange = (val: string | number) => {
-    setStatus(String(val));
-    onFilterChange(val);
-  };
-
-  return (
-    <TabbarComponent
-      active={status}
-      onChange={handleTabChange}
-      items={[
-        { label: "Semua Transaksi", value: "all" },
-        { label: "Menunggu",        value: "pending" },
-        { label: "Lunas",           value: "paid" }
-      ]}
-    />
-  );
-}
-```
-*Catatan untuk Agen: Gunakan `TabbarComponent` untuk beralih tampilan di dalam satu halaman yang sama tanpa memicu perubahan URL path.*
+ Josephson.

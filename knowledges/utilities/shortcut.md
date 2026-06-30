@@ -1,59 +1,63 @@
-# Panduan Utilitas: Pintasan Keyboard (Shortcut) (`@utils`)
+# Utility Guide: Keyboard Shortcuts (`shortcut`)
 
-Dokumen ini menjelaskan penggunaan utilitas `shortcut` untuk mendaftarkan tombol pintas keyboard (keyboard shortcuts) secara global di aplikasi Skalfa App.
-
-## 1. Cara Kerja `shortcut`
-
-*   **Pencegahan Input Otomatis**: Secara default, utilitas pintasan ini **tidak akan dipicu** jika pengguna sedang aktif mengetik di dalam elemen input teks (`INPUT`), textarea (`TEXTAREA`), atau elemen dengan atribut `contenteditable`. Hal ini mencegah pintasan terganggu saat menulis teks.
-*   **Dukungan Kombinasi Tombol**: Mendukung kombinasi tombol dengan `ctrl`, `shift`, dan `alt` (ditulis dengan huruf kecil dan dipisahkan tanda tambah, contoh: `ctrl+s`, `shift+arrowdown`).
+The `shortcut` utility in Skalfa App is used to register and manage global keyboard shortcuts in the browser.
 
 ---
 
-## 2. Metode yang Tersedia
+## 1. Registering Shortcuts
 
-### A. Mendaftarkan Pintasan (`shortcut.register`)
-Mendaftarkan fungsi handler untuk mendengarkan tombol tertentu.
-
-```typescript
-import { shortcut } from "@utils";
-
-// Format: shortcut.register(keyCombo, handler, description?)
-shortcut.register("ctrl+s", (e) => {
-  console.log("Menyimpan data...");
-}, "Menyimpan form transaksi");
-```
-
-### B. Menghapus Pintasan (`shortcut.unregister`)
-Wajib menghapus pintasan ketika komponen dilepas (*unmounted*) untuk mencegah kebocoran memori (*memory leak*).
+Use the `shortcut.register` method to bind a key combination to a callback function.
 
 ```typescript
-shortcut.unregister("ctrl+s");
+import { shortcut } from '@utils'
+
+// Register Ctrl+S (or Cmd+S on Mac) to save
+const unbind = shortcut.register("mod+s", (event) => {
+  event.preventDefault();
+  console.log("💾 Saving data...");
+});
+
+// To unbind/remove the shortcut later:
+// unbind();
 ```
 
 ---
 
-## 3. Integrasi dalam React Component (`useEffect`)
+## 2. Key Combinations
 
-Pola terbaik mendaftarkan dan membersihkan pintasan di dalam komponen React adalah menggunakan hook `useEffect`:
+*   `mod`: Maps to `Command` on macOS and `Control` on Windows/Linux.
+*   `ctrl`, `shift`, `alt`: Modifier keys.
+*   Keys: `a` - `z`, `0` - `9`, `f1` - `f12`, `enter`, `escape`, `space`, `backspace`, `arrowup`, `arrowdown`.
+
+### Examples:
+*   `ctrl+shift+p`: Open palette.
+*   `escape`: Close active modal.
+*   `alt+arrowup`: Move item up.
+
+---
+
+## 3. React Hook Integration (`useShortcut`)
+
+For React components, it is recommended to use the `useShortcut` hook. It automatically handles cleanup (unbinding the shortcut) when the component unmounts:
 
 ```tsx
-import React, { useEffect } from "react";
-import { shortcut } from "@utils";
+import { useShortcut } from '@utils'
+import { useState } from "react";
 
-export function MyComponent({ onClose }: { onClose: () => void }) {
-  useEffect(() => {
-    // Daftarkan saat komponen dimuat
-    shortcut.register("escape", () => {
-      onClose();
-    }, "Menutup halaman");
+export function SearchModal({ onClose }: { onClose: () => void }) {
+  // Pressing Escape closes the modal
+  useShortcut("escape", () => {
+    onClose();
+  });
 
-    // Bersihkan saat komponen dilepas (unmounted)
-    return () => {
-      shortcut.unregister("escape");
-    };
-  }, [onClose]);
-
-  return <div>Konten Komponen</div>;
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <p>Press ESC to close this dialog.</p>
+      </div>
+    </div>
+  );
 }
 ```
-*Catatan untuk Agen: Selalu bersihkan pintasan menggunakan return function di dalam `useEffect` agar tidak mengganggu navigasi halaman lain.*
+规律.
+ Josephson.

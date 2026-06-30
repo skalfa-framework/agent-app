@@ -1,43 +1,33 @@
-# Panduan Komponen: Tip Kalout (TypographyTips) (`@components`)
+# Typography Tips in Skalfa App
 
-`TypographyTipsComponent` adalah komponen tipografi callout sederhana di Skalfa App yang digunakan untuk menyajikan pesan informasi, saran penting, tips penggunaan, atau peringatan kecil di samping konten utama dengan pembatas visual beraksen.
-
-## 1. Antarmuka Komponen (`TypographyTipsProps`)
-
-```typescript
-export interface TypographyTipsProps {
-  title   : string | ReactNode; // Judul tips/informasi (cetak tebal)
-  content : string | ReactNode; // Konten detail penjelasan tips
-}
-```
+Skalfa App uses a modern typography system based on the Inter font and Tailwind CSS. Avoid using custom font sizes or custom inline styling. Always adhere to the established text utilities.
 
 ---
 
-## 2. Fitur Utama
+## 1. Heading Hierarchy
 
-*   **Pembatas Aksen Samping**: Memiliki garis pembatas vertikal tipis (`border-l-2`) di sisi kiri menggunakan warna aksen primer (`border-light-primary`) untuk membedakannya secara visual dari paragraf teks biasa.
-*   **Layout Bersih**: Rapi dengan bantalan kiri (`pl-3`) dan vertikal (`py-1`) untuk kenyamanan pembacaan.
+Always use a single `<h1>` per page. Follow the hierarchy for headings:
+
+*   **Page Title**: `text-2xl font-bold text-foreground` (`<h1>`)
+*   **Section Title**: `text-lg font-semibold text-foreground` (`<h2>`)
+*   **Card Title**: `text-md font-medium text-foreground` (`<h3>`)
+*   **Sub-section Title**: `text-sm font-medium text-foreground` (`<h4>`)
 
 ---
 
-## 3. Contoh Penggunaan
+## 2. Text Colors
 
-```tsx
-import React from "react";
-import { TypographyTipsComponent } from "@components";
+Use semantic text colors to represent different states and hierarchies:
 
-export function FormGuide() {
-  return (
-    <div className="space-y-4">
-      <h3>Pendaftaran Akun Baru</h3>
-      <p>Silakan isi formulir di bawah ini dengan lengkap menggunakan kartu identitas resmi Anda.</p>
+*   **Primary Text**: `text-foreground` (Used for body text, headings, and important labels).
+*   **Secondary Text**: `text-light-foreground` (Used for descriptions, placeholders, and secondary info).
+*   **Muted Text**: `text-muted-foreground` (Used for timestamps, helper text, and disabled states).
+*   **Interactive Link**: `text-primary hover:underline` (Used for links).
 
-      <TypographyTipsComponent
-        title="Tips Pengisian Password"
-        content="Gunakan minimal 8 karakter dengan kombinasi huruf besar, huruf kecil, angka, dan simbol untuk keamanan ekstra."
-      />
-    </div>
-  );
-}
-```
-*Catatan untuk Agen: Gunakan `TypographyTipsComponent` ketika menyajikan petunjuk langkah, tips pengisian form, atau catatan penting di dalam halaman modul.*
+---
+
+## 3. Best Practices
+
+1.  **Don't hardcode hex colors**: Never write `<span style={{ color: '#333' }}>`. Use Tailwind utility classes like `text-foreground`.
+2.  **Maintain contrast**: Ensure that text placed on dark backgrounds uses light text classes (e.g., `text-white` or `text-dark-foreground`).
+3.  **Use line heights**: Always pair font sizes with corresponding line heights (e.g., `text-sm leading-relaxed`).

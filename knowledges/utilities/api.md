@@ -1,135 +1,93 @@
-# Panduan Utilitas: API (`@utils`)
+# Utility Guide: API Client (`api`)
 
-Dokumen ini menjelaskan penggunaan utilitas API untuk melakukan komunikasi data HTTP ke backend Skalfa API.
+The `api` utility in Skalfa App is a dynamic REST API client built on top of `fetch`. It supports automatic JSON parsing, request interceptors (for adding authorization headers), and error handling.
 
-## 1. Fungsi Utama: `api` (Asynchronous Fetcher)
+---
 
-Digunakan untuk melakukan HTTP request manual (seperti `POST`, `PUT`, `PATCH`, `DELETE`, atau `GET` sekali jalan).
+## 1. Basic Requests
 
-### Tipe Parameter (`ApiType`)
+The `api` client provides shorthand methods for standard HTTP verbs:
+
 ```typescript
-type ApiType = {
-  path          ?: string;                  // Sub-path API (misal: "bookings")
-  url           ?: string;                  // URL penuh jika menembak API luar
-  method        ?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  params        ?: ApiParamsType;           // Parameter query khusus Skalfa
-  payload       ?: any;                     // Body request (otomatis berupa FormData / multipart)
-  includeParams ?: Record<string, any>;     // Query parameter tambahan
-  headers       ?: Record<string, any>;     // Custom headers
-  bearer        ?: string;                  // Token otorisasi kustom (default: token user login)
-};
+import { api } from '@utils'
+
+// GET request
+const products = await api.get("/api/products");
+
+// POST request with body payload
+const newProduct = await api.post("/api/products", {
+  name:  "Keyboard Mech",
+  price: 89.99
+});
+
+// PUT request
+await api.put("/api/products/1", { price: 79.99 });
+
+// DELETE request
+await api.delete("/api/products/1");
 ```
 
-### Parameter Query Khusus (`ApiParamsType`)
-Skalfa API mendukung standarisasi query parameter berikut:
-```typescript
-type ApiParamsType = {
-  page             ?: number;
-  paginate         ?: number;
-  sort             ?: string[];             // Contoh: ["created_at", "-id"]
-  search           ?: string;
-  searchable       ?: string[];
-  selectable       ?: string[];
-  expand           ?: string[];             // Eager load relasi (contoh: ["user"])
-  selectableOption ?: string[];
-  filter           ?: ApiFilterType[];
-};
+---
 
-type ApiFilterType = {
-  column  ?: string;
-  type    ?: "eq" | "ne" | "in" | "ni" | "bw" | ""; // eq=Equal, ne=NotEqual, in=In, ni=NotIn, bw=Between
-  value   ?: string | number | number[] | string[] | null;
-  logic   ?: "and" | "or";
-};
+## 2. Query Parameters
+
+You can pass query parameters as an object in the second argument for `get` requests (or via options):
+
+```typescript
+import { api } from '@utils'
+
+const activeUsers = await api.get("/api/users", {
+  params: {
+    status:   "active",
+    paginate: 10,
+    page:     1
+  }
+});
+// Automatically requests: /api/users?status=active&paginate=10&page=1
 ```
 
-### Contoh Penggunaan `api` dalam Service
+---
+
+## 3. Error Handling
+
+The `api` client throws an error if the response status code is not in the 2xx range. The thrown error object contains the status and the parsed error response body:
+
 ```typescript
-import { api } from "@utils";
+import { api } from '@utils'
 
-export async function createBooking(payload: any) {
-  const response = await api({
-    path:    "bookings",
-    method:  "POST",
-    payload: payload, // Dikirim sebagai multipart/form-data secara default
-  });
-
-  return response?.data;
+try {
+  await api.post("/api/users", { email: "invalid-email" });
+} catch (error: any) {
+  console.error("API Error Status:", error.status); // e.g., 422
+  console.error("Error Message:", error.message);    // e.g., "Validation failed"
+  console.error("Validation Details:", error.errors); // { email: ["Must be a valid email"] }
 }
 ```
 
 ---
 
-## 2. React Hook: `useGetApi` (Data Fetching Hook)
+## 4. Hook Integration (`useApi`)
 
-Digunakan untuk melakukan `GET` request di dalam komponen dengan penanganan state `loading`, `code`, `data`, dan `reset` (revalidation) secara otomatis.
-
-### Parameter Hook
-```typescript
-useGetApi(
-  props: ApiType & { 
-    method?: "GET"; 
-    cacheName?: string; 
-    expired?: number; // Waktu kedaluwarsa cache dalam milidetik (jika menggunakan cache)
-  }, 
-  sleep?: boolean // Jika true, hook tidak akan melakukan fetch otomatis saat render pertama
-)
-```
-
-### Nilai Kembalian (Return Value)
-Mengembalikan objek berupa:
-*   `loading`: `boolean` (status memuat data)
-*   `code`: `number | null` (HTTP Status Code)
-*   `data`: `any | null` (Response body dari API)
-*   `reset`: `() => void` (Fungsi untuk memicu fetch ulang data / revalidate)
-
-### Contoh Penggunaan `useGetApi` di Service (Custom Hook)
-Sesuai aturan pemisahan logika, panggil `useGetApi` di dalam custom hook layanan:
-
-```typescript
-// app/booking/_services/booking.service.ts
-import { useGetApi } from "@utils";
-
-export function useBookingList(page: number, search: string) {
-  const { loading, code, data, reset } = useGetApi({
-    path: "bookings",
-    params: {
-      page:     page,
-      paginate: 10,
-      search:   search,
-      expand:   ["customer", "unit"],
-    }
-  });
-
-  return {
-    bookings:   data?.data || [],
-    totalData:  data?.total || 0,
-    loading:    loading,
-    refresh:    reset,
-  };
-}
-```
-
-### Pengecualian Pemanggilan Langsung di Komponen
-Jika hanya membutuhkan pemanggilan API sederhana (tanpa logika bisnis tambahan), Anda diperbolehkan memanggil `useGetApi` secara langsung di berkas halaman atau komponen tanpa membuat custom hook terpisah:
+For React components, prefer using the `useApi` hook. It manages loading and error states automatically:
 
 ```tsx
-// app/booking/page.tsx
-"use client"
-import React from "react";
-import { useGetApi } from "@utils";
-import { TableSupervisionComponent } from "@components";
+import { useApi } from '@utils'
+import { Spinner } from '@components'
 
-export default function BookingPage() {
-  // Panggilan langsung diperbolehkan karena tidak ada logika bisnis tambahan
-  const { data: dataBooking, loading } = useGetApi({ path: "bookings" });
+export function ProductList() {
+  // Automatically fetches data on mount
+  const { data, loading, error, refresh } = useApi<any[]>("/api/products");
+
+  if (loading) return <Spinner />;
+  if (error) return <p className="text-danger">Failed to load: {error.message}</p>;
 
   return (
     <div>
-      <h1>Daftar Booking</h1>
-      {loading ? <p>Memuat...</p> : <pre>{JSON.stringify(dataBooking)}</pre>}
+      <button onClick={refresh}>Refresh Data</button>
+      <ul>
+        {data?.map(p => <li key={p.id}>{p.name} - ${p.price}</li>)}
+      </ul>
     </div>
   );
 }
 ```
-*Catatan: Jika ada lebih dari satu `useGetApi`, lakukan rename saat destrukturisasi (contoh: `const { data: dataProduct } = useGetApi(...)`).*

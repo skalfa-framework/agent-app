@@ -1,72 +1,59 @@
-# Panduan Komponen: Kartu (Card) (`@components`)
+# Component Guide: Card (`CardComponent`)
 
-Dokumen ini menjelaskan penggunaan komponen kartu (`CardComponent` dan `DashboardCardComponent`) sebagai kontainer visual standar di Skalfa App.
+`CardComponent` is a structural container in Skalfa App. It is used to group related content, forms, or data displays into a clean, bordered box with consistent padding and styling.
 
-## 1. Kartu Standar (`CardComponent`)
+---
 
-Digunakan sebagai kontainer pembungkus layout putih bersih dengan bayangan lembut dan border tipis.
+## 1. Component Interface (`CardProps`)
 
-### Antarmuka Komponen (`CardProps`)
 ```typescript
-interface CardProps {
-  children   : React.ReactNode;
-  className ?: string;          // Kustom class Tailwind
+export interface CardProps {
+  title       ?: ReactNode;          // Header title (can be string or JSX)
+  extra       ?: ReactNode;          // Extra actions displayed in the header right corner
+  footer      ?: ReactNode;          // Footer content
+  className   ?: string;             // Custom Tailwind classes for the wrapper
+  bodyClass   ?: string;             // Custom Tailwind classes for the body container
+  children     : ReactNode;          // Card body content
 }
-```
-
-### Contoh Penggunaan:
-```tsx
-import { CardComponent } from "@components";
-
-<CardComponent className="shadow-sm max-w-md">
-  <h3 className="font-semibold text-lg">Informasi Pelanggan</h3>
-  <p className="text-sm text-slate-500">Nama: Ahmad Budi</p>
-</CardComponent>
 ```
 
 ---
 
-## 2. Kartu Dashboard Statistik (`DashboardCardComponent`)
+## 2. Key Features
 
-Kartu khusus untuk menampilkan ringkasan informasi, data statistik, atau pintasan menu navigasi di halaman ringkasan (dashboard).
+*   **Header and Extra Actions**: Includes a header section with a title and an optional `extra` slot on the right (ideal for action buttons, links, or dropdowns).
+*   **Consistent Spacing**: Pre-configured paddings and borders that align with the application's overall design language.
+*   **Footer Slot**: An optional footer section separated by a subtle border, commonly used for form submit buttons or pagination controls.
 
-### Antarmuka Komponen (`DashboardCardProps`)
-```typescript
-interface DashboardCardProps {
-  content      ?: string | ReactNode; // Konten utama (biasanya angka statistik / ikon besar)
-  title        ?: string | ReactNode; // Judul statistik di bawah konten
-  rightContent ?: string | ReactNode; // Konten tambahan di sisi kanan (misal: grafik mini/badge persentase)
-  path         ?: string;             // Rute tujuan Next.js (jika diisi, kartu bertindak sebagai Link)
-  className    ?: string;             // Kustom class Tailwind
-}
-```
+---
 
-### Fitur Otomatisasi Link (`path`):
-Jika properti `path` diisi, seluruh komponen kartu otomatis dibungkus menggunakan tag `<Link>` Next.js sehingga kartu tersebut dapat diklik untuk navigasi instan tanpa reload halaman.
+## 3. Usage Example
 
-### Contoh Penggunaan di Dashboard:
 ```tsx
-import React from "react";
-import { DashboardCardComponent } from "@components";
-import { faUsers, faChevronRight } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CardComponent, ButtonComponent } from "@components";
+import { faEdit } from "@fortawesome/free-solid-svg-icons";
 
-export function StatsGrid() {
+export function UserProfileCard() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <DashboardCardComponent
-        path="/dashboard/users"
-        content={
-          <div className="flex items-center gap-3">
-            <FontAwesomeIcon icon={faUsers} className="text-primary text-xl" />
-            <span className="text-2xl font-bold">1,240</span>
-          </div>
-        }
-        title={<span className="text-sm text-slate-500">Total Pengguna Aktif</span>}
-        rightContent={<FontAwesomeIcon icon={faChevronRight} className="text-slate-300" />}
-      />
-    </div>
+    <CardComponent
+      title="User Profile"
+      extra={
+        <ButtonComponent variant="ghost" size="sm" icon={faEdit}>
+          Edit
+        </ButtonComponent>
+      }
+      footer={
+        <div className="flex justify-end gap-2">
+          <span className="text-xs text-light-foreground">Last updated: 2 hours ago</span>
+        </div>
+      }
+    >
+      <div className="space-y-2">
+        <p><strong>Name:</strong> John Doe</p>
+        <p><strong>Email:</strong> john.doe@example.com</p>
+        <p><strong>Role:</strong> Administrator</p>
+      </div>
+    </CardComponent>
   );
 }
 ```
-*Catatan untuk Agen: Selalu gunakan `DashboardCardComponent` untuk membuat grid widget statistik pada dashboard demi konsistensi bentuk visual kartu.*

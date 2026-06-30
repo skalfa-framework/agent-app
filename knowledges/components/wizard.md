@@ -1,56 +1,85 @@
-# Panduan Komponen: Penunjuk Langkah (Wizard) (`@components`)
+# Component Guide: Wizard / Stepper (`WizardComponent`)
 
-`WizardComponent` adalah komponen indikator langkah (stepper/process bar) di Skalfa App yang digunakan untuk menampilkan visualisasi alur proses berurutan (multi-step process) seperti proses pendaftaran bertahap atau form pemesanan multi-halaman.
+`WizardComponent` is a multi-step form container in Skalfa App. It is used to break down complex forms into a sequential, step-by-step process.
 
-## 1. Antarmuka Komponen (`WizardProps`)
+---
+
+## 1. Component Interface (`WizardProps`)
 
 ```typescript
 export interface WizardProps {
-  items  : { label: string; circle_content: ReactNode }[]; // Daftar langkah (label & simbol lingkaran)
-  active : number;                                          // Indeks langkah aktif saat ini (0-indexed)
+  steps: {
+    title    : string;               // Title of the step
+    content  : ReactNode;             // Form or content rendered in this step
+  }[];
+  activeStep ?: number;               // Index of the current active step (0-indexed)
+  onStepChange?: (step: number) => void;// Callback when step changes
+  onComplete  ?: () => void;          // Callback when the last step is submitted/completed
+  className  ?: string;
 }
 ```
 
 ---
 
-## 2. Fitur Utama
+## 2. Key Features
 
-*   **Garis Progres Otomatis**: Komponen menggambar garis penghubung antar lingkaran langkah secara otomatis. Garis akan berwarna primer (`bg-primary`) untuk langkah yang telah dilalui, gradasi berwarna (`bg-gradient-to-r`) untuk langkah transisi aktif berikutnya, dan abu-abu (`bg-light-primary`) untuk langkah yang belum dilalui.
-*   **Simbol Lingkaran Kustom (`circle_content`)**: Lingkaran langkah dapat diisi angka biasa, teks pendek, atau komponen ikon kustom (misal: FontAwesomeIcon).
-*   **Penyelarasan Lebar Dinamis**: Lebar wadah setiap langkah dibagi rata secara matematis sesuai jumlah item menggunakan rumus `calc(100% * 1 / jumlah_item)` untuk menjamin visual yang rapi di berbagai ukuran layar.
+*   **Step Indicator**: Displays a top progress bar with numbered circles indicating the completed, active, and upcoming steps.
+*   **Navigation Buttons**: Automatically renders "Back" and "Next / Complete" buttons at the bottom.
+*   **Validation Guard**: You can control the `activeStep` externally to prevent the user from advancing to the next step until the current step's form validation passes.
 
 ---
 
-## 3. Contoh Penggunaan
-
-Berikut adalah contoh visualisasi proses pemesanan hotel 3 langkah:
+## 3. Usage Example
 
 ```tsx
-import React from "react";
 import { WizardComponent } from "@components";
-import { faCheck, faUser, faCreditCard, faClipboardCheck } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useState } from "react";
 
-export function BookingProcess({ currentStep }: { currentStep: number }) {
+export function MultiStepRegistration() {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    {
+      title: "Account Details",
+      content: (
+        <div className="space-y-4">
+          <p>Please enter your email and password.</p>
+          {/* Input fields */}
+        </div>
+      )
+    },
+    {
+      title: "Personal Profile",
+      content: (
+        <div className="space-y-4">
+          <p>Please enter your full name and address.</p>
+          {/* Input fields */}
+        </div>
+      )
+    },
+    {
+      title: "Confirmation",
+      content: (
+        <div className="space-y-4">
+          <p>Review your details before submitting.</p>
+        </div>
+      )
+    }
+  ];
+
+  const handleComplete = () => {
+    alert("Registration completed!");
+  };
+
   return (
-    <WizardComponent
-      active={currentStep} // Nilai dinamis (0, 1, atau 2)
-      items={[
-        {
-          label:          "Identitas",
-          circle_content: currentStep > 0 ? <FontAwesomeIcon icon={faCheck} /> : <FontAwesomeIcon icon={faUser} />
-        },
-        {
-          label:          "Pembayaran",
-          circle_content: currentStep > 1 ? <FontAwesomeIcon icon={faCheck} /> : <FontAwesomeIcon icon={faCreditCard} />
-        },
-        {
-          label:          "Konfirmasi",
-          circle_content: <FontAwesomeIcon icon={faClipboardCheck} />
-        }
-      ]}
-    />
+    <div className="max-w-xl mx-auto p-6 bg-white border rounded-lg shadow-sm">
+      <WizardComponent
+        steps={steps}
+        activeStep={currentStep}
+        onStepChange={setCurrentStep}
+        onComplete={handleComplete}
+      />
+    </div>
   );
 }
 ```
-*Catatan untuk Agen: Gunakan `WizardComponent` hanya sebagai komponen indikator alur visual. Manajemen state data antar langkah dan tombol navigasi (Selanjutnya/Kembali) dikelola secara terpisah di dalam berkas kustom hook layanan Anda.*

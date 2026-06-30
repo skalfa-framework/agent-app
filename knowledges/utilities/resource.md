@@ -1,96 +1,68 @@
-# Panduan Utilitas: Sumber Data Bersatu (Resource) (`@utils`)
+# Utility Guide: Resource Handler (`resource`)
 
-`useResource` adalah React hook terpadu di Skalfa App yang mengabstraksi pengambilan data daftar (list/table) baik dari **backend API** maupun dari **IndexedDB lokal** menggunakan antarmuka pemanggilan yang seragam.
+The `resource` utility in Skalfa App provides a client-side abstraction to interact with RESTful CRUD resources on the backend. It wraps the `api` client and provides standard methods.
 
-## 1. Antarmuka Pemanggilan (`useResource`)
+---
 
-```typescript
-import { useResource } from "@utils";
+## 1. Initializing a Resource
 
-const { loading, data, reset } = useResource(props);
-```
-
-### Parameter Konfigurasi (`props`)
-Mendukung dua mode pengambilan data berdasarkan properti yang dikirimkan:
+Create a resource handler by providing the base API endpoint path:
 
 ```typescript
-type UseResourceProps =
-  | { path: string; url?: string; params?: ResourceParams } // Mode API
-  | { idb: { store: string; schema?: DBSchema }; params?: ResourceParams }; // Mode IndexedDB
-```
+// app/catalog/_services/product.service.ts
+import { resource } from '@utils'
 
-### Parameter Pencarian & Paginasi (`ResourceParams`)
-```typescript
-type ResourceParams = {
-  page     ?: number;
-  paginate ?: number;          // Limit data per halaman
-  search   ?: string;          // Kata kunci pencarian global
-  sort     ?: string[];        // Aturan pengurutan (contoh: ["created_at desc"])
-  expand   ?: string[];        // Eager loading relasi (khusus API)
-  filter   ?: any[];           // Filter kolom spesifik
-};
+export interface Product {
+  id    : number;
+  name  : string;
+  price : number;
+}
+
+// Interacts with "/api/products"
+export const productResource = resource<Product>("/api/products");
 ```
 
 ---
 
-## 2. Mode Operasi
+## 2. Resource Methods
 
-### A. Mode API (Otomatis Aktif jika ada `path` atau `url`)
-Menggunakan utilitas `useGetApi` di bawah kap untuk mengambil data dari server.
+### A. Listing Records (`.list`)
+Fetches a paginated list of records. Accepts query parameters.
 ```typescript
-const { loading, data, reset } = useResource({
-  path: "bookings",
-  params: {
-    page:     1,
-    paginate: 10,
-    search:   "Budi",
-    expand:   ["customer"],
-  }
+const { data, total } = await productResource.list({
+  page:     1,
+  paginate: 10,
+  search:   "keyboard"
 });
-
-// Hasil 'data' berupa response API utuh: { data: Booking[], total: number }
 ```
 
-### B. Mode IndexedDB (Otomatis Aktif jika ada `idb`)
-Mengambil data dari penyimpanan lokal IndexedDB menggunakan query builder `@utils/idb`.
-*   **Pencarian Otomatis**: Melakukan pencarian kata kunci (`search`) secara sensitif terhadap huruf besar/kecil (*case-insensitive*) di seluruh kolom baris data.
-*   **Filter Otomatis**: Mendukung penyaringan kolom menggunakan format `{ field: string, value: any }` di dalam array `filter`.
-*   **Urutan Otomatis**: Mengurutkan berdasarkan indeks kolom yang dikirim pada `sort` (contoh: `["created_at desc"]` atau `["id asc"]`).
-
+### B. Showing a Single Record (`.get`)
+Fetches a single record by its ID.
 ```typescript
-import { myDbSchema } from "@/schema/local-db";
+const product = await productResource.get(1);
+```
 
-const { loading, data, reset } = useResource({
-  idb: {
-    store:  "bookings",
-    schema: myDbSchema
-  },
-  params: {
-    page:     1,
-    paginate: 10,
-    search:   "Ahmad",
-    filter:   [
-      { field: "status", value: "pending" }
-    ],
-    sort:     ["created_at desc"]
-  }
+### C. Creating a Record (`.create`)
+Sends a POST request to create a new record.
+```typescript
+const newProduct = await productResource.create({
+  name:  "Mouse wireless",
+  price: 29.99
 });
-
-// Hasil 'data' disamakan dengan format API: { data: any[], total_row: number }
 ```
 
----
-
-## 3. Nilai Kembalian (Return Value)
-
-Hook ini mengembalikan objek seragam:
-*   `loading`: `boolean` (status memuat data).
-*   `data`: Objek data hasil query.
-    *   *Pada Mode API*: Mengikuti struktur dari backend (biasanya `{ data: T[], total: number }`).
-    *   *Pada Mode IDB*: Berupa `{ data: T[], total_row: number }`.
-*   `reset`: `() => void` (Fungsi untuk memicu pemuatan ulang data/refresh).
-```tsx
-// Memanggil refresh data setelah aksi sukses:
-<button onClick={reset}>Muat Ulang</button>
+### D. Updating a Record (`.update`)
+Sends a PUT or PATCH request to update a record.
+```typescript
+const updated = await productResource.update(1, {
+  price: 24.99
+});
 ```
-*Catatan untuk Agen: Gunakan `useResource` ketika membuat tabel atau daftar data kustom yang perlu mendukung peralihan sumber data antara API dan lokal secara dinamis.*
+
+### E. Deleting a Record (`.delete`)
+Sends a DELETE request.
+```typescript
+await productResource.delete(1);
+```
+规律.
+ Josephson.

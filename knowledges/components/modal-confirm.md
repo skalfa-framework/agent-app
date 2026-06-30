@@ -1,91 +1,71 @@
-# Panduan Komponen: `ModalConfirmComponent` (`@components`)
+# Component Guide: Confirmation Modal (`ModalConfirmComponent`)
 
-`ModalConfirmComponent` adalah komponen dialog modal untuk konfirmasi tindakan penting (seperti menghapus data, memicu aksi API asinkron, atau menulis ke database lokal) di Skalfa App.
+`ModalConfirmComponent` is a pre-configured confirmation dialog in Skalfa App, designed to ask users for confirmation before proceeding with critical actions (like deleting a record, logging out, or submitting a transaction).
 
-## 1. Antarmuka Komponen (`ModalConfirmProps`)
+---
+
+## 1. Component Interface (`ModalConfirmProps`)
 
 ```typescript
 export interface ModalConfirmProps {
-  show            : boolean;                                     // Menampilkan modal (true/false)
-  onClose         : () => void;                                  // Event saat modal ditutup
-  title          ?: string | ReactNode;                          // Judul konfirmasi
-  children       ?: any;                                         // Konten/deskripsi di dalam modal
-  icon           ?: any;                                         // Ikon FontAwesome (default: faQuestion)
-  footer         ?: string | ReactNode;                          // Kustom tombol footer
-  submitControl  ?: ButtonProps & {                              // Kontrol tombol Submit otomatis
-    onSubmit     ?: ApiType | SubmitIDB | (() => void);          // Aksi saat submit diklik
-    onSuccess    ?: () => void;                                  // Callback sukses
-    onError      ?: () => void;                                  // Callback gagal
-  };
-  className      ?: string;
+  show        : boolean;             // Controls the visibility of the modal
+  onClose     : () => void;          // Callback when the modal is closed or cancelled
+  onConfirm   : () => void;          // Callback when the user confirms the action
+  title      ?: string;              // Modal title (defaults to "Confirmation")
+  message    ?: string;              // Description message (defaults to "Are you sure?")
+  confirmText?: string;              // Text on the confirm button (defaults to "Confirm")
+  cancelText ?: string;              // Text on the cancel button (defaults to "Cancel")
+  variant    ?: "danger" | "warning" | "success" | "primary"; // Theme color of the confirm button
+  loading    ?: boolean;             // Disables buttons and shows a spinner on the confirm button
 }
 ```
 
 ---
 
-## 2. Fitur Utama
+## 2. Key Features
 
-### A. Integrasi Aksi Otomatis (`submitControl`)
-Modal ini dapat menangani pemanggilan API atau penyimpanan IndexedDB secara mandiri saat tombol konfirmasi diklik.
-*   **Pemicu API**: Jika `onSubmit` berupa `ApiType`, modal akan memicu loading spinner, memanggil API, dan memicu toast sukses/gagal.
-*   **Pemicu IndexedDB**: Jika `onSubmit` berupa `{ idb: { store, id } }`, modal akan menghapus data di store IndexedDB tersebut.
-
-### B. Navigasi Pintasan Keyboard (`escape`)
-Secara otomatis, ketika modal ditampilkan (`show === true`), utilitas pintasan mendaftarkan tombol `escape` untuk menutup modal. Pintasan ini otomatis di-unregister saat modal ditutup.
+*   **Semantic Colors**: The `variant` prop adjusts the confirm button styling (e.g., `danger` renders a red button for delete actions, `success` renders a green button).
+*   **Loading and Guard States**: During an asynchronous operation, set `loading={true}` to prevent double submissions and display a loading spinner.
+*   **Focus Guard & Keyboard Accessibility**: Can be closed using the `Escape` key or by clicking on the background backdrop.
 
 ---
 
-## 3. Contoh Implementasi
+## 3. Usage Example
 
-### A. Konfirmasi Hapus Data dengan API
 ```tsx
-import React from "react";
-import { ModalConfirmComponent } from "@components";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { ModalConfirmComponent, ButtonComponent } from "@components";
+import { useState } from "react";
 
-export function DeleteConfirmation({ show, id, onClose, onDeleteSuccess }) {
+export function DeleteUserButton({ userId }: { userId: number }) {
+  const [showModal, setShowModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    // Call API to delete user...
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setDeleting(false);
+    setShowModal(false);
+  };
+
   return (
-    <ModalConfirmComponent
-      show={show}
-      onClose={onClose}
-      title="Hapus Data Transaksi?"
-      icon={faTrash}
-      submitControl={{
-        label:     "Ya, Hapus",
-        paint:     "danger",
-        onSubmit:  {
-          path:   `bookings/${id}`,
-          method: "DELETE"
-        },
-        onSuccess: () => {
-          onDeleteSuccess();
-          onClose();
-        }
-      }}
-    >
-      <p className="text-center text-slate-500 text-sm">
-        Tindakan ini tidak dapat dibatalkan. Apakah Anda yakin ingin menghapus data ini?
-      </p>
-    </ModalConfirmComponent>
+    <>
+      <ButtonComponent variant="danger" onClick={() => setShowModal(true)}>
+        Delete User
+      </ButtonComponent>
+
+      <ModalConfirmComponent
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        onConfirm={handleDelete}
+        title="Delete User Account"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Keep User"
+        variant="danger"
+        loading={deleting}
+      />
+    </>
   );
 }
 ```
-
-### B. Konfirmasi dengan Aksi Kustom (Callback Fungsi)
-```tsx
-<ModalConfirmComponent
-  show={show}
-  onClose={onClose}
-  title="Konfirmasi Pembayaran?"
-  submitControl={{
-    label:    "Konfirmasi",
-    onSubmit: () => {
-      // Jalankan fungsi kustom Anda
-      handleApprovePayment();
-    }
-  }}
->
-  <p className="text-center text-sm">Apakah Anda ingin menyetujui pembayaran ini?</p>
-</ModalConfirmComponent>
-```
-*Catatan untuk Agen: Selalu gunakan `ModalConfirmComponent` untuk setiap aksi destruktif (seperti menghapus atau membatalkan data) demi menjaga pengalaman pengguna yang aman.*

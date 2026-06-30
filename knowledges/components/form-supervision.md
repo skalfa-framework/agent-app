@@ -1,146 +1,123 @@
-# Panduan Komponen: `FormSupervisionComponent` (`@components`)
+# Component Guide: Form Supervision (`FormSupervisionComponent`)
 
-`FormSupervisionComponent` adalah komponen form generator tingkat lanjut di Skalfa App. Komponen ini secara otomatis menangani rendering UI, manajemen state internal, validasi input, pemicuan loading state, konfirmasi sebelum submit, dan pengiriman data ke API atau IndexedDB.
+`FormSupervisionComponent` is a "magic" component in Skalfa App. It automatically generates and manages forms based on a JSON schema definition. It handles layout rendering, validation, and submission states.
 
-## 1. Antarmuka Komponen (`formSupervisionProps`)
+---
+
+## 1. Component Interface (`FormSupervisionProps`)
 
 ```typescript
-interface formSupervisionProps {
-  title          ?: string;
-  fields          : FormType[];                                         // Daftar field di dalam form
-  submitControl   : ApiType | { idb: { store: string, schema?: DBSchema }}; // Tujuan submit (API / IndexedDB)
-  defaultValue   ?: object | null;                                      // Nilai awal form
-  payload        ?: (values: any) => Promise<object> | object;          // Transformasi data sebelum dikirim
-  confirmation   ?: boolean;                                            // Tampilkan dialog konfirmasi (Ya/Tidak)
-  onSuccess      ?: (data: any) => void;                                // Callback sukses
-  onError        ?: (code: number) => void;                             // Callback gagal (misal: 422, 500)
-  footerControl  ?: ({ loading }: { loading: boolean }) => ReactNode;   // Custom tombol/footer
-  className      ?: string;
+export interface FormSupervisionProps {
+  fields      : FormSupervisionField[];               // Array of field configurations
+  onSubmit    : (values: Record<string, any>) => void; // Submit callback
+  loading    ?: boolean;                              // Submit loading state
+  submitLabel?: string;                               // Submit button text
+  className  ?: string;                               // Custom Tailwind classes
 }
 ```
 
 ---
 
-## 2. Struktur Field (`FormType`)
+## 2. Field Schema Configuration (`FormSupervisionField`)
 
-Setiap item di dalam array `fields` dikonfigurasi sebagai berikut:
+Each field in the `fields` array is configured as follows:
 
 ```typescript
-interface FormType<T extends TypeKeys = keyof ConstructionMap> {
-  col          ?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | string; // Lebar grid Tailwind (default: 12)
-  type         ?: T;                                                      // Tipe input (lihat tabel di bawah)
-  construction ?: ConstructionMap[T];                                     // Properti/konfigurasi input
-  className    ?: string;
-  onHide       ?: (values: any) => boolean;                               // Sembunyikan field secara dinamis
-  watch        ?: (ctx: WatchContext) => WatchAction | undefined;          // Reaksi dinamis terhadap perubahan field lain
-}
-```
-
-### Daftar Tipe Input (`type`):
-| Nilai `type` | Deskripsi | Properti `construction` |
-|--------------|-----------|-------------------------|
-| `default` (default)| Input teks standar (text, email, dsb) | `InputProps` (name, label, placeholder, validations) |
-| `select`     | Dropdown pilihan | `SelectProps` (options: `Array<{ value, label }>`, dll) |
-| `number`     | Input angka | `InputNumberProps` |
-| `currency`   | Input nominal mata uang Rupiah | `InputCurrencyProps` |
-| `date`       | Pilihan tanggal (datepicker) | `InputDateProps` |
-| `datetime`   | Pilihan tanggal & waktu | `InputDateTimeProps` |
-| `time`       | Pilihan waktu | `InputTimeProps` |
-| `enter-password`| Input kata sandi | `InputPasswordProps` |
-| `check`      | Checkbox | `InputCheckboxProps` |
-| `radio`      | Pilihan radio | `InputRadioProps` |
-| `image`      | Upload gambar | `InputImageProps` |
-| `map`        | Pilihan koordinat peta | `InputMapProps` |
-| `cluster`    | Repeater / Form dinamis (array data) | `ClusterConstruction` |
-| `custom`     | Render kustom manual menggunakan fungsi | `formCustomConstructionProps` |
-
----
-
-## 3. Logika Dinamis (`watch` & `onHide`)
-
-### A. Sembunyikan Field (`onHide`)
-Menyembunyikan field berdasarkan nilai field lainnya.
-```typescript
-{
-  col: 6,
-  type: "default",
-  construction: { name: "npwp", label: "Nomor NPWP" },
-  // Sembunyikan jika status pernikahan bukan 'menikah'
-  onHide: (values) => values.status_pernikahan !== "menikah"
-}
-```
-
-### B. Memantau Perubahan (`watch`)
-Mengubah properti field (seperti `disabled`, `required`, `value`, `hidden`, `readonly`) secara dinamis saat nilai field lain berubah.
-```typescript
-{
-  col: 6,
-  type: "default",
-  construction: { name: "alamat_domisili", label: "Alamat Domisili" },
-  watch: ({ values, self, prev }) => {
-    // Jika checkbox "alamat sesuai ktp" dicentang, isi otomatis dan buat readonly
-    if (values.alamat_sesuai_ktp) {
-      return {
-        value:    values.alamat_ktp,
-        readonly: true
-      };
-    }
-    return { readonly: false };
-  }
+export interface FormSupervisionField {
+  col          : number;                     // Grid column span (1-12)
+  construction : {
+    name         : string;                   // Field name/key in form values
+    label        : string;                   // Form label
+    type        ?: string;                   // Input type (e.g. text, select, file)
+    placeholder ?: string;                   // Placeholder text
+    options     ?: { value: any; label: string }[]; // Options for select/radio/checkbox
+    required    ?: boolean;                  // Client-side required validation
+    validation  ?: string[];                 // Custom validation rules
+    [key: string]: any;                      // Additional field-specific properties
+  };
 }
 ```
 
 ---
 
-## 4. Contoh Implementasi Lengkap
+## 3. Supported Input Types
 
-Berikut adalah contoh form Login sederhana:
+The component automatically renders the appropriate input control based on `construction.type`:
+*   `text` (Default): Single-line text input.
+*   `input-password`: Password input with a visibility toggle.
+*   `textarea`: Multi-line text area.
+*   `select`: Dropdown list.
+*   `checkbox`: Checkbox (single or multiple).
+*   `radio`: Radio button group.
+*   `date`: Date picker.
+*   `file`: File uploader.
+*   `toggle`: Switch/Toggle button.
+
+---
+
+## 4. Usage Example
 
 ```tsx
-import React from "react";
 import { FormSupervisionComponent } from "@components";
-import { faUser, faLock } from "@fortawesome/free-solid-svg-icons";
+import { useState } from "react";
 
-export function LoginForm({ onSuccess }: { onSuccess: (data: any) => void }) {
+export function UserRegistrationForm() {
+  const [submitting, setSubmitting] = useState(false);
+
+  const fields = [
+    {
+      col: 6,
+      construction: {
+        name:        "fullname",
+        label:       "Full Name",
+        type:        "text",
+        placeholder: "Enter your full name",
+        required:    true
+      }
+    },
+    {
+      col: 6,
+      construction: {
+        name:        "email",
+        label:       "Email Address",
+        type:        "text",
+        placeholder: "username@example.com",
+        required:    true,
+        validation:  ["email"]
+      }
+    },
+    {
+      col: 12,
+      construction: {
+        name:        "role",
+        label:       "User Role",
+        type:        "select",
+        options: [
+          { value: "admin", label: "Administrator" },
+          { value: "member", label: "Regular Member" }
+        ],
+        required:    true
+      }
+    }
+  ];
+
+  const handleSubmit = async (values: Record<string, any>) => {
+    setSubmitting(true);
+    console.log("Submitting values:", values);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setSubmitting(false);
+  };
+
   return (
-    <FormSupervisionComponent
-      title="Masuk ke Akun Anda"
-      confirmation={false}
-      submitControl={{
-        path:   "auth/login",
-        method: "POST"
-      }}
-      onSuccess={onSuccess}
-      fields={[
-        {
-          col:  12,
-          type: "default",
-          construction: {
-            name:        "username",
-            label:       "Username",
-            placeholder: "Masukkan username Anda",
-            leftIcon:    faUser,
-            validations: {
-              required:  [true, "Username wajib diisi"]
-            }
-          }
-        },
-        {
-          col:  12,
-          type: "enter-password",
-          construction: {
-            name:        "password",
-            label:       "Password",
-            placeholder: "Masukkan password Anda",
-            leftIcon:    faLock,
-            validations: {
-              required:  [true, "Password wajib diisi"]
-            }
-          }
-        }
-      ]}
-    />
+    <div className="max-w-xl p-6 bg-white rounded-lg border shadow-sm">
+      <h2 className="text-lg font-bold mb-4">Register New User</h2>
+      <FormSupervisionComponent
+        fields={fields}
+        onSubmit={handleSubmit}
+        loading={submitting}
+        submitLabel="Create Account"
+      />
+    </div>
   );
 }
 ```
-Untuk kustomisasi tingkat lanjut seperti repeater (cluster) atau render manual (custom), rujuk langsung ke kode sumber [FormSupervisionComponent](file:///d:/_skalfa/skalfa-app/components/base.components/supervision/FormSupervision.component.tsx).

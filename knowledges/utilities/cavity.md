@@ -1,67 +1,66 @@
-# Panduan Utilitas: Mesin Cache Lokal (Cavity) (`@utils`)
+# Utility Guide: Cavity State Manager (`cavity`)
 
-`cavity` adalah utilitas mesin penyimpanan cache lokal di browser berbasis IndexedDB. Utilitas ini digunakan secara internal oleh `useGetApi` untuk menyimpan data sementara agar aplikasi dapat berjalan sangat cepat dan mengurangi beban request ke server.
-
-## 1. Cara Kerja `cavity`
-
-*   **Penyimpanan**: Menyimpan objek data di dalam database IndexedDB dengan nama `<nama-aplikasi>.cavity` pada object store bernama `cache`.
-*   **Waktu Kadaluwarsa (Expiration)**: Masa aktif cache ditentukan dalam satuan **menit** saat data disimpan.
-*   **Pembersihan Otomatis**: Ketika aplikasi meminta data menggunakan `cavity.get(key)`, mesin akan memeriksa waktu kadaluwarsa. Jika data telah kadaluwarsa, data tersebut otomatis dihapus dari database lokal dan mengembalikan status kosong.
+`cavity` is the central global state manager in Skalfa App. It is a lightweight reactive store designed to share state across non-parent-child components without the boilerplate of Redux or Context.
 
 ---
 
-## 2. Metode yang Tersedia
+## 1. Registering State Keys
 
-### A. Menyimpan Data ke Cache (`cavity.set`)
-Menyimpan data dengan menentukan masa aktif (dalam menit).
+All global state keys and their initial values must be defined in the cavity store:
 
 ```typescript
-import { cavity } from "@utils";
+// store/index.ts
+import { cavity } from '@utils'
 
-await cavity.set({
-  key:     "active_announcements",
-  data:    [ { id: 1, text: "Maintenance besok!" } ],
-  expired: 60 // Masa aktif 60 menit (1 jam)
+// Initialize state
+cavity.init({
+  theme:       "light",
+  sidebarOpen: true,
+  cartCount:   0
 });
 ```
 
-### B. Mengambil Data dari Cache (`cavity.get`)
-Mengambil data yang masih aktif. Mengembalikan data langsung jika masih valid, atau mengembalikan struktur kosong jika kadaluwarsa atau tidak ditemukan.
+---
 
-```typescript
-import { cavity } from "@utils";
+## 2. Accessing State in React Components (`useCavity`)
 
-const cacheData = await cavity.get("active_announcements");
+Use the `useCavity` hook to read values. The component will automatically re-render when the selected state key changes.
 
-if (cacheData && !("message" in cacheData)) {
-  // Data cache valid ditemukan
-  console.log("Data Cache:", cacheData);
-} else {
-  // Cache kosong atau kadaluwarsa
-  console.log("Cache tidak ditemukan atau sudah kadaluwarsa");
+```tsx
+import { useCavity } from '@utils'
+
+export function Sidebar() {
+  // Reads sidebarOpen and re-renders when it changes
+  const [isOpen, setIsOpen] = useCavity<boolean>("sidebarOpen");
+
+  return (
+    <div className={`fixed top-0 left-0 h-full bg-white transition-all ${isOpen ? "w-64" : "w-0"}`}>
+      <button onClick={() => setIsOpen(false)}>Close Sidebar</button>
+      {/* Sidebar content */}
+    </div>
+  );
 }
 ```
 
-### C. Menghapus Data Cache (`cavity.delete`)
-Menghapus kunci cache secara manual (misal: setelah melakukan update data agar cache diperbarui).
-
-```typescript
-import { cavity } from "@utils";
-
-await cavity.delete("active_announcements");
-```
-
 ---
 
-## 3. Integrasi dalam API Fetching (`useGetApi`)
-Utilitas ini biasanya tidak dipanggil secara langsung melainkan diintegrasikan ke dalam `useGetApi` untuk mengotomatiskan caching request `GET`:
+## 3. Updating State Outside React Components
+
+You can read or update state values directly from plain JavaScript/TypeScript files (such as services, helpers, or API interceptors) without using hooks:
 
 ```typescript
-// Meminta data dari API dengan caching selama 30 menit
-const { data, loading } = useGetApi({
-  path:      "announcements",
-  expired:   30, // 30 menit cache
-  cacheName: "announcements_list" // Kunci cache kustom
-});
+// app/auth/_services/auth.service.ts
+import { cavity } from '@utils'
+
+export class AuthService {
+  static async handleLoginSuccess(user: any) {
+    // Set global user state
+    cavity.set("user", user);
+    
+    // Read theme state
+    const currentTheme = cavity.get("theme");
+    console.log("Current theme is:", currentTheme);
+  }
+}
 ```
-*Catatan untuk Agen: Gunakan `cavity` untuk mengoptimalkan performa halaman dashboard atau daftar data referensi statis yang jarang berubah.*
+*Note: `cavity.set()` triggers reactive updates to all components subscribing to that key via `useCavity()`.*

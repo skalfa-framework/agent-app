@@ -1,72 +1,67 @@
-# Panduan Utilitas: Class Name & Kustomisasi Gaya (`cn`, `pcn`) (`@utils`)
+# Utility Guide: Class Merging (`cn`)
 
-Dokumen ini menjelaskan penggunaan utilitas `cn` dan `pcn` untuk menggabungkan kelas CSS Tailwind secara aman serta mendukung penulisan gaya kustom berbasis prefiks di Skalfa App.
+The `cn` utility in Skalfa App is a helper function used to conditionally join CSS class names together. It is built on top of `clsx` and `tailwind-merge` to ensure Tailwind CSS classes are merged without conflicts.
 
-## 1. Penggabungan Kelas Tailwind Aman (`cn`)
+---
 
-Metode `cn(...classes)` menggabungkan nama-nama kelas CSS menggunakan `clsx` dan menyelaraskan konflik kelas Tailwind menggunakan `tailwind-merge`.
+## 1. Why Use `cn`?
 
-### Contoh Penggunaan:
+When writing conditional Tailwind classes or passing custom classes to child components, simple string concatenation can result in duplicate or conflicting classes (e.g., `px-4 px-6`). 
+
+`cn` resolves conflicts by overriding earlier classes with later ones:
+
 ```typescript
-import { cn } from "@utils";
+import { cn } from '@utils'
 
-// twMerge akan memastikan 'bg-blue-600' menimpa 'bg-red-500' secara aman
-const classes = cn("px-4 py-2 bg-red-500", isPrimary && "bg-blue-600");
+// Standard Tailwind conflict: px-4 and px-6
+const classes = cn("px-4 py-2 bg-primary", "px-6");
+// Returns: "py-2 bg-primary px-6" (px-4 is overridden by px-6)
 ```
 
 ---
 
-## 2. Kelas Kustom Berprefiks (`pcn` / Prefix Class Name)
+## 2. Usage Examples
 
-Komponen bawaan Skalfa sering kali terdiri dari beberapa sub-elemen (misalnya modal memiliki area *backdrop*, *header*, dan *footer*). Untuk mempermudah kustomisasi gaya sub-elemen tersebut dari luar, Skalfa menggunakan pembatas titik dua ganda (`::`) melalui utilitas `pcn`.
-
-### Cara Kerja:
-Fungsi `pcn(className, prefix, pseudoClass?)` menyaring string kelas yang diawali dengan nama prefiks tertentu, lalu membuang prefiks tersebut saat komponen merendernya.
-
-*   *Format Penulisan di Prop*: `prefiks::nama-kelas-tailwind` (contoh: `backdrop::bg-black/50`)
-*   *Default*: Jika kelas tidak memiliki prefiks, kelas tersebut otomatis dianggap milik prefiks `"base"` atau `"input"`.
-
-### Contoh Simulasi Penyaringan (`pcn`):
-```typescript
-import { pcn } from "@utils";
-
-const customClass = "bg-white border backdrop::bg-slate-900/40 header::text-primary";
-
-// Menyaring kelas untuk area backdrop
-pcn(customClass, "backdrop"); // Hasil: "bg-slate-900/40"
-
-// Menyaring kelas untuk area header
-pcn(customClass, "header");   // Hasil: "text-primary"
-
-// Menyaring kelas dasar (tanpa prefiks)
-pcn(customClass, "base");     // Hasil: "bg-white border"
-```
-
-### Contoh Implementasi di Komponen Kustom:
-Jika Anda membuat komponen kustom dengan sub-elemen, gunakan pola ini agar mudah dikustomisasi dari luar:
-
+### A. Conditional Classes
+Pass objects where keys are class names and values are boolean conditions:
 ```tsx
-import React from "react";
-import { cn, pcn } from "@utils";
+import { cn } from '@utils'
 
-type CT = "container" | "title" | "base";
-
-export function CustomBox({ children, className = "" }: { children: React.ReactNode, className?: string }) {
+export function Alert({ type, message }: { type: "success" | "error"; message: string }) {
   return (
-    <div className={cn("p-4 border", pcn<CT>(className, "container"))}>
-      <h4 className={cn("font-semibold", pcn<CT>(className, "title"))}>
-        Judul Box
-      </h4>
-      <div className={pcn<CT>(className, "base")}>
-        {children}
-      </div>
+    <div
+      className={cn(
+        "p-4 rounded-md border",
+        {
+          "bg-green-50 border-green-200 text-green-800": type === "success",
+          "bg-red-50 border-red-200 text-red-800":       type === "error"
+        }
+      )}
+    >
+      {message}
     </div>
   );
 }
-
-// Cara memanggil komponen dari luar dengan kustomisasi sub-elemen:
-<CustomBox className="container::bg-slate-50 title::text-danger text-sm">
-  Konten Box
-</CustomBox>
 ```
-*Catatan untuk Agen: Selalu gunakan `cn` untuk penggabungan kelas dinamis dan terapkan pola `pcn` jika membuat komponen majemuk yang membutuhkan kustomisasi gaya sub-elemen.*
+
+### B. Merging Custom Props Classes
+Always use `cn` in your custom components to allow external `className` overrides:
+```tsx
+import { cn } from '@utils'
+
+interface CardProps {
+  className ?: string;
+  children   : React.ReactNode;
+}
+
+export function Card({ className, children }: CardProps) {
+  return (
+    <div className={cn("p-6 bg-white rounded-lg border shadow-sm", className)}>
+      {children}
+    </div>
+  );
+}
+```
+*If a user renders `<Card className="p-8 shadow-md">`, the padding will be correctly updated to `p-8` and the shadow to `shadow-md`.*
+规律.
+ Josephson.

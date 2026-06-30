@@ -1,50 +1,79 @@
-# Panduan Komponen: Deteksi Klik Luar (OutsideClick) (`@components`)
+# Component Guide: Outside Click Detector (`OutsideClickComponent`)
 
-`OutsideClickComponent` adalah komponen pembungkus (wrapper component) di Skalfa App yang mendeteksi ketukan atau klik di luar area elemen anak (*children*) yang dibungkusnya. Komponen ini sangat penting digunakan untuk menutup dropdown, menu popover, tooltip, atau modal kustom ketika pengguna mengklik area luar.
+`OutsideClickComponent` (and its corresponding hook `useOutsideClick`) is used in Skalfa App to detect when a user clicks outside a specific element. This is commonly used to close dropdown menus, tooltips, or popovers.
 
-## 1. Antarmuka Komponen (`OutsideClickHandlerProps`)
+---
+
+## 1. Hook Interface (`useOutsideClick`)
 
 ```typescript
-export interface OutsideClickHandlerProps {
-  children        : ReactNode;         // Elemen yang ingin dilindungi dari deteksi klik luar
-  onOutsideClick ?: () => void;        // Callback fungsi saat klik terjadi di luar area children
+export function useOutsideClick(
+  ref: RefObject<HTMLElement>,
+  callback: () => void
+): void;
+```
+
+---
+
+## 2. Component Wrapper (`OutsideClickComponent`)
+
+A wrapper component that accepts a children element and triggers `onOutsideClick` when a click occurs outside of it.
+
+```typescript
+export interface OutsideClickProps {
+  onOutsideClick : () => void;
+  children       : ReactElement;
 }
 ```
 
 ---
 
-## 2. Fitur Utama & Keamanan
+## 3. Usage Examples
 
-*   **Penggunaan Pointer Events**: Menggunakan listener `pointerdown` alih-alih `click` biasa untuk mendukung respon cepat di perangkat layar sentuh (mobile) maupun desktop secara konsisten.
-*   **Penggunaan `queueMicrotask`**: Di bawah kap, komponen memproses callback di dalam microtask untuk memastikan tidak ada konflik siklus rendering React sewaktu state visibilitas diubah bersamaan dengan event bubbling.
-*   **Pembersihan Otomatis**: Secara otomatis menghapus event listener dari `document` saat komponen dilepas (*unmounted*) untuk menghindari kebocoran memori.
-
----
-
-## 3. Contoh Penggunaan
-
-### Membuat Dropdown Menu Kustom
-Contoh di bawah menunjukkan cara membuat menu dropdown sederhana yang otomatis menutup sendiri jika area luar diklik.
-
+### A. Using the Hook (Preferred for Custom Components)
 ```tsx
-import React, { useState } from "react";
-import { OutsideClickComponent, ButtonComponent } from "@components";
+import { useOutsideClick } from "@components";
+import { useRef, useState } from "react";
 
-export function CustomDropdown() {
+export function DropdownMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useOutsideClick(menuRef, () => {
+    if (isOpen) setIsOpen(false);
+  });
 
   return (
-    <div className="relative inline-block">
-      <ButtonComponent
-        label="Menu Opsi"
-        onClick={() => setIsOpen(!isOpen)}
-      />
-
+    <div ref={menuRef} className="relative inline-block">
+      <button onClick={() => setIsOpen(!isOpen)}>Toggle Menu</button>
       {isOpen && (
-        <OutsideClickComponent onOutsideClick={() => setIsOpen(false)}>
-          <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-50 py-1">
-            <a href="#edit" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Ubah Profil</a>
-            <a href="#settings" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Pengaturan</a>
+        <div className="absolute right-0 mt-2 w-48 bg-white border shadow-lg rounded-md p-2">
+          <p className="p-2 hover:bg-light cursor-pointer">Option A</p>
+          <p className="p-2 hover:bg-light cursor-pointer">Option B</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### B. Using the Component Wrapper
+```tsx
+import { OutsideClickComponent } from "@components";
+import { useState } from "react";
+
+export function PopoverInfo() {
+  const [showPopover, setShowPopover] = useState(false);
+
+  return (
+    <div className="relative">
+      <button onClick={() => setShowPopover(true)}>Info</button>
+
+      {showPopover && (
+        <OutsideClickComponent onOutsideClick={() => setShowPopover(false)}>
+          <div className="absolute top-8 left-0 p-4 bg-white border rounded shadow-md z-10">
+            <p>This is a popover. Click outside to close it.</p>
           </div>
         </OutsideClickComponent>
       )}
@@ -52,4 +81,3 @@ export function CustomDropdown() {
   );
 }
 ```
-*Catatan untuk Agen: Jangan menggunakan deteksi klik dokumen manual di dalam komponen presentasional. Selalu bungkus elemen dropdown kustom Anda menggunakan `OutsideClickComponent`.*

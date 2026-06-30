@@ -1,76 +1,79 @@
-# Panduan Komponen: Akordeon (Accordion) (`@components`)
+# Component Guide: Accordion (`AccordionComponent`)
 
-`AccordionComponent` adalah komponen panel lipat (collapse panel) di Skalfa App yang digunakan untuk menyembunyikan atau menampilkan konten secara dinamis (seperti halaman FAQ, detail opsi pembayaran, atau pemisah formulir yang panjang).
+`AccordionComponent` is a collapsible panel component in Skalfa App. It is used to dynamically show or hide content, such as FAQs, payment details, or sections in long forms.
 
-## 1. Antarmuka Komponen (`AccordionProps`)
+---
+
+## 1. Component Interface (`AccordionProps`)
 
 ```typescript
 export interface AccordionProps {
-  items       : { head: ReactNode; content: ReactNode }[]; // Daftar item akordeon (judul & konten)
-  setActive  ?: number | null;                             // Indeks panel yang terbuka secara default (0-indexed)
-  horizontal ?: boolean;                                   // Mengaktifkan mode melebar ke samping (kiri-kanan)
-  className  ?: string;                                    // Kustom class Tailwind
+  items       : { head: ReactNode; content: ReactNode }[]; // List of accordion items (title & content)
+  setActive  ?: number | null;                             // Index of the panel open by default (0-indexed)
+  horizontal ?: boolean;                                   // Enables horizontal collapse mode
+  className  ?: string;                                    // Custom Tailwind CSS classes
 }
 ```
 
 ---
 
-## 2. Fitur Utama
+## 2. Key Features
 
-*   **Dua Arah Orientasi (Horizontal vs Vertikal)**:
-    *   *Vertikal (Default)*: Panel melipat ke atas dan bawah (atas-bawah).
-    *   *Horizontal (`horizontal={true}`)*: Panel melipat ke samping (kiri-kanan). Sangat berguna untuk layout kolom dinamis.
-*   **Transisi Animasi Halus**: Ikon chevron (`faChevronDown` atau `faChevronLeft`) otomatis berputar 180 derajat dengan transisi halus (`transition-transform`) saat status panel berubah dari terbuka menjadi tertutup.
-*   **Aksi Toggle Mandiri**: Mengklik judul panel yang sedang terbuka akan menutup panel tersebut secara otomatis.
+*   **Two-way Orientation**:
+    *   *Vertical (Default)*: Panels expand and collapse vertically (top-to-bottom).
+    *   *Horizontal (`horizontal={true}`)*: Panels expand and collapse horizontally (left-to-right), useful for dynamic column layouts.
+*   **Smooth Animations**: The chevron icon (`faChevronDown` or `faChevronLeft`) automatically rotates 180 degrees with a smooth transition (`transition-transform`) when the panel state toggles.
+*   **Self-Closing Toggle**: Clicking on the header of an already open panel will collapse it.
 
 ---
 
-## 3. Contoh Penggunaan
+## 3. Usage Examples
 
-### A. Akordeon FAQ Vertikal Standar
+### A. Vertical Accordion (Default)
 ```tsx
-import React from "react";
 import { AccordionComponent } from "@components";
 
 export function FaqSection() {
+  const faqItems = [
+    {
+      head: <span>How do I reset my password?</span>,
+      content: <p>Go to settings, click "Reset Password", and follow the instructions.</p>
+    },
+    {
+      head: <span>Is my data secure?</span>,
+      content: <p>Yes, we use industry-standard AES encryption to protect your data.</p>
+    }
+  ];
+
   return (
-    <AccordionComponent
-      setActive={0} // Membuka panel pertama secara default
-      items={[
-        {
-          head:    <span className="text-sm">Bagaimana cara melakukan pembayaran?</span>,
-          content: (
-            <p className="text-xs text-slate-500">
-              Anda dapat melakukan pembayaran via Transfer Bank, E-Wallet, atau Tunai di outlet kami.
-            </p>
-          )
-        },
-        {
-          head:    <span className="text-sm">Apakah bisa melakukan pembatalan?</span>,
-          content: (
-            <p className="text-xs text-slate-500">
-              Pembatalan dapat dilakukan maksimal 24 jam sebelum waktu booking dimulai.
-            </p>
-          )
-        }
-      ]}
-    />
+    <div className="max-w-2xl mx-auto p-4">
+      <h2 className="text-xl font-bold mb-4">Frequently Asked Questions</h2>
+      <AccordionComponent items={faqItems} setActive={0} />
+    </div>
   );
 }
 ```
 
-### B. Akordeon Desain Kustom (Custom Styling)
-Menerapkan gaya spesifik pada kontainer atau tajuk akordeon menggunakan pemisah tanda titik dua ganda (`::`) untuk class kustom (`pcn` helper):
-
+### B. Horizontal Accordion
 ```tsx
-<AccordionComponent
-  className="container::bg-slate-50 head::text-primary active::bg-primary/5"
-  items={[
+import { AccordionComponent } from "@components";
+
+export function ColumnSelector() {
+  const columns = [
     {
-      head:    <span>Syarat & Ketentuan</span>,
-      content: <div>Isi syarat ketentuan di sini...</div>
+      head: <div className="p-2 bg-primary text-white">Panel A</div>,
+      content: <div className="p-4 border">Content of Panel A (Expanded horizontally)</div>
+    },
+    {
+      head: <div className="p-2 bg-secondary text-white">Panel B</div>,
+      content: <div className="p-4 border">Content of Panel B (Expanded horizontally)</div>
     }
-  ]}
-/>
+  ];
+
+  return (
+    <div className="h-64 flex">
+      <AccordionComponent items={columns} horizontal={true} />
+    </div>
+  );
+}
 ```
-*Catatan untuk Agen: Gunakan `AccordionComponent` untuk menghemat ruang vertikal pada halaman yang memiliki informasi tekstual panjang.*

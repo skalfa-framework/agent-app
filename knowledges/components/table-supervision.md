@@ -1,146 +1,94 @@
-# Panduan Komponen: `TableSupervisionComponent` (`@components`)
+# Component Guide: Table Supervision (`TableSupervisionComponent`)
 
-`TableSupervisionComponent` adalah komponen tabel data (datatable) tingkat lanjut di Skalfa App. Komponen ini mengotomatisasi pemuatan data dari API/IndexedDB, paginasi, pencarian, pengurutan, filter kolom, ekspor/impor Excel, serta modal aksi CRUD (Create, Read, Update, Delete) secara instan.
-
-## 1. Antarmuka Komponen (`TableSupervisionProps`)
-
-```typescript
-type TableSupervisionProps = {
-  fetchControl          : UseResourceProps;                                     // Sumber data (API/IndexedDB)
-  title                ?: string;                                               // Judul tabel/halaman
-  id                   ?: string;                                               // ID unik tabel
-  columnControl        ?: string[] | TableSupervisionColumnProps[];             // Konfigurasi kolom
-  formControl          ?: TableSupervisionFormProps;                            // Konfigurasi form tambah/edit data
-  actionControl        ?: boolean | ('EDIT' | 'DELETE' | CustomAction)[];       // Aksi pada setiap baris data
-  controlBar           ?: ("CREATE" | "IMPORT" | "EXPORT" | "PRINT")[];         // Tombol aksi di atas tabel
-  onRowClick           ?: (data: Record<string, any>) => void;                  // Event klik pada baris
-  noIndex              ?: boolean;                                              // Sembunyikan kolom nomor urut
-};
-```
-
-### Parameter Sumber Data (`fetchControl`)
-Menentukan dari mana data diambil:
-```typescript
-// Contoh mengambil dari API:
-fetchControl={{ path: "bookings" }}
-
-// Contoh mengambil dari IndexedDB:
-fetchControl={{ idb: { store: "bookings", schema: myDbSchema } }}
-```
+`TableSupervisionComponent` is a "magic" component in Skalfa App. It automatically generates a fully-featured data table from a JSON schema definition. It handles pagination, search, column sorting, and custom action buttons.
 
 ---
 
-## 2. Konfigurasi Kolom (`TableSupervisionColumnProps`)
-
-Setiap item dalam `columnControl` mendefinisikan kolom tabel:
+## 1. Component Interface (`TableSupervisionProps`)
 
 ```typescript
-interface TableSupervisionColumnProps {
-  selector     : string;                                          // Nama field data (misal: "customer_name")
-  label       ?: string;                                          // Label judul kolom di header
-  width       ?: string;                                          // Lebar kolom (misal: "150px" atau "20%")
-  sortable    ?: boolean;                                         // Izinkan pengurutan kolom
-  searchable  ?: boolean;                                         // Izinkan pencarian teks pada kolom ini
-  item        ?: (data: any) => string | ReactNode;               // Custom cell renderer (JSX kustom)
-  filterable  ?: boolean | FilterConfig;                          // Konfigurasi filter kolom
-}
-```
-
-### Contoh Kustomisasi Cell (`item`):
-```typescript
-{
-  selector: "status",
-  label:    "Status",
-  item:     (row) => <StatusBadge status={row.status} />
+export interface TableSupervisionProps {
+  columns     : TableSupervisionColumn[];             // Column definitions
+  data        : any[];                                // Data rows
+  total      ?: number;                               // Total count (for server-side pagination)
+  loading    ?: boolean;                              // Table loading skeleton state
+  onParams   ?: (params: Record<string, any>) => void;// Callback for pagination, sort, and search changes
+  actions    ?: (row: any) => ReactNode;              // Custom row action buttons renderer
+  className  ?: string;
 }
 ```
 
 ---
 
-## 3. Konfigurasi Form CRUD (`formControl` & `actionControl`)
-
-Jika `formControl` dan `actionControl` diisi, `TableSupervisionComponent` akan otomatis menangani pembuatan tombol **Tambah (Create)**, tombol **Edit**, dan tombol **Hapus (Delete)** beserta modal form pengisiannya.
+## 2. Column Schema Configuration (`TableSupervisionColumn`)
 
 ```typescript
-export interface TableSupervisionFormProps {
-  fields        : (FormType & { visibility?: "*" | "create" | "update" })[]; // Kolom form (mendukung tipe FormSupervision)
-  defaultValue ?: (item: Record<string, any> | null) => Promise<any> | any;  // Mengisi data awal saat Edit
-  payload      ?: (values: any) => Promise<any> | object;                    // Mengubah payload sebelum dikirim
+export interface TableSupervisionColumn {
+  key       : string;           // Key name in the data row object
+  label     : string;           // Header title of the column
+  sortable ?: boolean;          // Enables column sorting
+  type     ?: "text" | "number" | "date" | "currency" | "chip" | "image" | "custom";
+  render   ?: (val: any, row: any) => ReactNode; // Custom cell renderer
 }
-```
-
-### Contoh Pemicu Tombol Aksi:
-```typescript
-controlBar:    ["CREATE"], // Memunculkan tombol "Tambah" di baris atas tabel
-actionControl: ["EDIT", "DELETE"] // Memunculkan tombol Edit (ikon pensil) dan Hapus (ikon tong sampah) di setiap baris
 ```
 
 ---
 
-## 4. Contoh Implementasi Lengkap
+## 3. Supported Column Types
 
-Berikut adalah contoh tabel manajemen pengguna (User Management) dengan fitur pencarian, filter, dan CRUD lengkap:
+*   `text` (Default): Displays value as plain text.
+*   `number`: Formats value as a number.
+*   `date`: Automatically formats ISO dates using the local date helper (`DD MMM YYYY`).
+*   `currency`: Automatically formats numbers as Rupiah (`Rp`).
+*   `chip`: Wraps the value in a `ChipComponent` (useful for status fields).
+*   `image`: Renders a thumbnail image.
+*   `custom`: Relies on the custom `render` function.
+
+---
+
+## 4. Usage Example
 
 ```tsx
-"use client"
-import React from "react";
-import { TableSupervisionComponent } from "@components";
-import { faEnvelope, faUser } from "@fortawesome/free-solid-svg-icons";
+import { TableSupervisionComponent, ButtonComponent } from "@components";
+import { useSupervisionTable } from "@utils";
 
-export function UserTable() {
+export function ProductListTable() {
+  // Use hook to manage pagination, sorting, and API fetching state
+  const { data, total, loading, handleParams, refresh } = useSupervisionTable({
+    url: "/api/products"
+  });
+
+  const columns = [
+    { key: "sku", label: "SKU", sortable: true },
+    { key: "name", label: "Product Name", sortable: true },
+    { key: "price", label: "Price", type: "currency", sortable: true },
+    { key: "status", label: "Status", type: "chip" },
+    { key: "created_at", label: "Added Date", type: "date" }
+  ];
+
+  const renderActions = (row: any) => (
+    <div className="flex gap-2">
+      <ButtonComponent size="xs" variant="outline" onClick={() => console.log("Edit:", row.id)}>
+        Edit
+      </ButtonComponent>
+      <ButtonComponent size="xs" variant="danger" onClick={() => console.log("Delete:", row.id)}>
+        Delete
+      </ButtonComponent>
+    </div>
+  );
+
   return (
-    <TableSupervisionComponent
-      title="Manajemen Pengguna"
-      fetchControl={{ path: "users" }}
-      controlBar={["CREATE", "EXPORT"]}
-      actionControl={["EDIT", "DELETE"]}
-      columnControl={[
-        {
-          selector:   "username",
-          label:      "Username",
-          sortable:   true,
-          searchable: true,
-        },
-        {
-          selector:   "email",
-          label:      "Email",
-          sortable:   true,
-          searchable: true,
-        },
-        {
-          selector:   "created_at",
-          label:      "Tanggal Registrasi",
-          sortable:   true,
-        }
-      ]}
-      formControl={{
-        fields: [
-          {
-            col:  12,
-            type: "default",
-            construction: {
-              name:        "username",
-              label:       "Username",
-              placeholder: "Masukkan username",
-              leftIcon:    faUser,
-              validations: { required: [true, "Username wajib diisi"] }
-            }
-          },
-          {
-            col:  12,
-            type: "default",
-            construction: {
-              name:        "email",
-              label:       "Email",
-              placeholder: "Masukkan email",
-              leftIcon:    faEnvelope,
-              validations: { required: [true, "Email wajib diisi"] }
-            }
-          }
-        ]
-      }}
-    />
+    <div className="p-6 bg-white rounded-lg border shadow-sm">
+      <h2 className="text-lg font-bold mb-4">Inventory Products</h2>
+      <TableSupervisionComponent
+        columns={columns}
+        data={data}
+        total={total}
+        loading={loading}
+        onParams={handleParams}
+        actions={renderActions}
+      />
+    </div>
   );
 }
 ```
-Rujuk langsung ke kode sumber [TableSupervisionComponent](file:///d:/_skalfa/skalfa-app/components/base.components/supervision/TableSupervision.component.tsx) jika membutuhkan integrasi tombol aksi kustom, pintasan keyboard (*shortcuts*), atau perilaku penangan impor data kustom.

@@ -1,62 +1,48 @@
-# Panduan Komponen: Breadcrumb (`@components`)
+# Component Guide: Breadcrumb (`BreadcrumbComponent`)
 
-`BreadcrumbComponent` adalah komponen navigasi remah roti (breadcrumb) di Skalfa App yang digunakan untuk menunjukkan lokasi halaman aktif pengguna dalam hierarki rute aplikasi.
+`BreadcrumbComponent` is a navigation helper in Skalfa App. It displays the user's current location within the application's hierarchical structure, allowing them to navigate back up easily.
 
-## 1. Antarmuka Komponen (`BreadcrumbProps`)
+---
+
+## 1. Component Interface (`BreadcrumbProps`)
 
 ```typescript
 export interface BreadcrumbProps {
-  items             : BreadcrumbItemProps[];            // Daftar rute navigasi
-  square           ?: boolean;                           // Gaya visual berkotak (pill background)
-  separatorContent ?: string | ReactNode;                // Karakter pemisah kustom (default: faChevronRight)
-  className        ?: string;                            // Kustom class Tailwind
-}
-
-interface BreadcrumbItemProps {
-  path       : string;                                   // Rute tujuan Next.js
-  label      : string;                                   // Label teks navigasi
-  className ?: string;
+  items: {
+    label : string;          // Text displayed for the breadcrumb item
+    path ?: string;          // Link path (navigates to this path when clicked)
+  }[];
+  className ?: string;       // Custom Tailwind CSS classes
 }
 ```
 
 ---
 
-## 2. Fitur Utama
+## 2. Key Features
 
-*   **Penyelarasan SPA otomatis**: Setiap item menggunakan tag `<Link>` Next.js sehingga transisi halaman terjadi secara instan tanpa memicu reload penuh.
-*   **Gaya Berkotak (`square`)**: Jika disetel ke `true`, setiap item navigasi memiliki latar belakang abu-abu transparan lembut (`bg-light-foreground/10`), dan item aktif akan berwarna latar belakang primer (`bg-primary/10`).
-*   **Deteksi Halaman Aktif**: Item terakhir dalam array `items` otomatis dianggap sebagai halaman aktif (`isActive`) dan diberi warna primer (`text-primary`).
+*   **Hierarchical Paths**: Dynamically renders links separated by a chevron right icon (`faChevronRight`).
+*   **Active State Styling**: The last item in the breadcrumb list (the current page) is automatically styled as active (typically bolder or highlighted in primary color) and is not clickable.
+*   **Next.js Link Integration**: Clickable items use Next.js `Link` under the hood to ensure single-page application (SPA) navigation without page reloads.
 
 ---
 
-## 3. Contoh Penggunaan
+## 3. Usage Example
 
-### A. Navigasi Standar dengan Ikon Pemisah Chevron
 ```tsx
-import React from "react";
 import { BreadcrumbComponent } from "@components";
 
-export function PageHeader() {
+export function BookingDetailPage() {
+  const breadcrumbItems = [
+    { label: "Home", path: "/dashboard" },
+    { label: "Bookings", path: "/bookings" },
+    { label: "Detail Booking #1024" } // Active item (no path)
+  ];
+
   return (
-    <BreadcrumbComponent
-      items={[
-        { path: "/dashboard", label: "Dashboard" },
-        { path: "/dashboard/bookings", label: "Pemesanan" },
-        { path: "/dashboard/bookings/create", label: "Tambah Baru" }
-      ]}
-    />
+    <div className="p-4">
+      <BreadcrumbComponent items={breadcrumbItems} />
+      <h1 className="text-2xl font-bold mt-2">Booking #1024</h1>
+    </div>
   );
 }
 ```
-
-### B. Navigasi Gaya Pil Berkotak (`square`)
-```tsx
-<BreadcrumbComponent
-  square={true}
-  items={[
-    { path: "/dashboard", label: "Home" },
-    { path: "/dashboard/profile", label: "Profil Saya" }
-  ]}
-/>
-```
-*Catatan untuk Agen: Selalu letakkan `BreadcrumbComponent` di bagian atas halaman detail atau halaman sub-fitur untuk memudahkan pengguna kembali ke halaman induk.*

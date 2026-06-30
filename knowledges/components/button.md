@@ -1,76 +1,76 @@
-# Panduan Komponen: `ButtonComponent` (`@components`)
+# Component Guide: Button (`ButtonComponent`)
 
-`ButtonComponent` adalah komponen tombol standar di Skalfa App yang mendukung berbagai varian, warna, ukuran, indikator loading, ikon FontAwesome, serta terintegrasi otomatis dengan rute Next.js jika diberikan properti link.
+`ButtonComponent` is a highly customizable button component in Skalfa App. It supports various styles (variants), sizes, loading states, and icons.
 
-## 1. Antarmuka Komponen (`ButtonProps`)
+---
+
+## 1. Component Interface (`ButtonProps`)
 
 ```typescript
-interface ButtonProps {
-  type      ?: "submit" | "button";
-  label     ?: string | ReactNode;                                       // Teks tombol
-  variant   ?: "solid" | "outline" | "light" | "simple";                 // Gaya visual (default: "solid")
-  paint     ?: "primary" | "secondary" | "success" | "danger" | "warning"; // Warna tema (default: "primary")
-  rounded   ?: boolean | string;                                         // Tombol berbentuk bulat penuh
-  block     ?: boolean;                                                  // Lebar penuh (w-full)
-  disabled  ?: boolean;
-  size      ?: "xs" | "sm" | "md" | "lg";                                // Ukuran (default: "md")
-  onClick   ?: (e: any) => void;
-  href      ?: string;                                                   // Jika diisi, tombol dirender sebagai Next.js <Link>
-  icon      ?: any;                                                      // Ikon FontAwesome
-  loading   ?: boolean;                                                  // Menampilkan spinner memuat data
-  className ?: string;                                                   // Kustom class Tailwind
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant   ?: "primary" | "secondary" | "danger" | "success" | "warning" | "outline" | "ghost";
+  size      ?: "xs" | "sm" | "md" | "lg" | "xl";
+  loading   ?: boolean;             // Displays a loading spinner and disables click
+  icon      ?: IconDefinition;      // FontAwesome icon to display before text
+  iconRight ?: IconDefinition;      // FontAwesome icon to display after text
+  children  ?: ReactNode;
 }
 ```
 
 ---
 
-## 2. Fitur Utama
+## 2. Key Features
 
-### A. Otomatis Menjadi Link (`href`)
-Jika properti `href` diisi, tombol tidak akan merender tag `<button>` melainkan tag `<Link>` dari Next.js. Hal ini menjaga performa Single Page Application (SPA).
-
-```tsx
-import { ButtonComponent } from "@components";
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-
-// Otomatis bertindak sebagai navigasi tanpa reload
-<ButtonComponent
-  label="Kembali ke Dashboard"
-  href="/dashboard"
-  icon={faArrowLeft}
-  variant="outline"
-/>
-```
-
-### B. Indikator Memuat Data (`loading`)
-Jika `loading` bernilai `true`, tombol otomatis dinonaktifkan (`disabled`) dan ikon/teks akan digantikan oleh animasi pemutar (*loading spinner*).
-
-```tsx
-import { ButtonComponent } from "@components";
-
-<ButtonComponent
-  label="Simpan Data"
-  type="submit"
-  loading={isSubmitting} // Jika true, spinner otomatis muncul
-/>
-```
+*   **Design Variants**: Predefined color palettes matching the Skalfa design system.
+*   **Loading State**: When `loading={true}`, a spinner is displayed inside the button, its text is slightly faded, and the button is automatically disabled.
+*   **Icon Support**: Integrates with FontAwesome icons. You can place icons on the left (`icon`) or right (`iconRight`).
 
 ---
 
-## 3. Contoh Varian Visual
+## 3. Usage Examples
 
+### A. Basic Buttons
 ```tsx
-// Tombol Sukses Solid
-<ButtonComponent label="Selesai" paint="success" variant="solid" />
+import { ButtonComponent } from "@components";
+import { faPlus, faSave } from "@fortawesome/free-solid-svg-icons";
 
-// Tombol Bahaya Outline
-<ButtonComponent label="Hapus" paint="danger" variant="outline" />
-
-// Tombol Sederhana Tanpa Border (Simple)
-<ButtonComponent label="Batal" paint="secondary" variant="simple" />
-
-// Tombol Kecil Bulat dengan Ikon
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
-<ButtonComponent icon={faPlus} size="sm" rounded={true} />
+export function Actions() {
+  return (
+    <div className="flex gap-4">
+      <ButtonComponent variant="primary" icon={faPlus}>
+        Add New
+      </ButtonComponent>
+      
+      <ButtonComponent variant="outline">
+        Cancel
+      </ButtonComponent>
+    </div>
+  );
+}
 ```
-*Catatan untuk Agen: Gunakan selalu `ButtonComponent` daripada tag HTML `<button>` biasa untuk menjaga keselarasan desain visual sistem.*
+
+### B. Loading and Disabled States
+```tsx
+import { ButtonComponent } from "@components";
+import { useState } from "react";
+
+export function SubmitForm() {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    setSubmitting(false);
+  };
+
+  return (
+    <ButtonComponent 
+      variant="success" 
+      loading={submitting} 
+      onClick={handleSubmit}
+    >
+      Submit Data
+    </ButtonComponent>
+  );
+}
+```

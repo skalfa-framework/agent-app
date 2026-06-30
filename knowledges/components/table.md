@@ -1,98 +1,69 @@
-# Panduan Komponen: Tabel Data (Table) (`@components`)
+# Component Guide: Data Table (`TableComponent`)
 
-`TableComponent` adalah komponen presentasi tabel data (datatable) dasar di Skalfa App yang digunakan untuk merender baris data dalam format grid, mendukung paginasi kustom, pengurutan kolom, seleksi baris (checkboxes), dan optimasi tampilan mobile.
+`TableComponent` is a primitive table component in Skalfa App designed to render tabular data cleanly. It supports custom column headers, row selection, sorting, and pagination.
 
-## 1. Antarmuka Komponen (`TableProps`)
+---
+
+## 1. Component Interface (`TableProps`)
 
 ```typescript
 export interface TableProps {
-  columns            : TableColumnType[];                       // Definisi kolom tabel
-  data               : Record<string, any>[];                   // Baris data (array objek)
-  pagination        ?: PaginationProps | false;                 // Konfigurasi komponen paginasi
-  loading           ?: boolean;                                 // Tampilkan state memuat data
-  sortBy            ?: string[];                                // Status pengurutan aktif (contoh: ["id", "desc"])
-  onChangeSortBy    ?: (sort: string[]) => void;                // Callback saat kolom diurutkan
-  search            ?: string;                                  // Kata kunci pencarian
-  onChangeSearch    ?: (search: string) => void;
-  checks            ?: (string | number)[];                    // Array ID baris yang dicentang
-  onChangeChecks    ?: (checks: (string | number)[]) => void;   // Callback saat baris dicentang
-  actionBulking     ?: ((checks: (string | number)[]) => ReactNode) | false; // Tombol aksi massal (bulk actions)
-  onRowClick        ?: (data: Record<string, any>, key: number) => void;     // Callback klik baris
-  noIndex           ?: boolean;                                 // Sembunyikan kolom nomor urut otomatis
+  columns     : { key: string; label: string; sortable?: boolean }[];
+  data        : any[];
+  loading    ?: boolean;
+  onSort     ?: (key: string, direction: "asc" | "desc") => void;
+  onSelect   ?: (selectedIds: any[]) => void; // Enables checkbox selection
+  actions    ?: (row: any) => ReactNode;      // Action buttons in the last column
+  className  ?: string;
 }
 ```
 
 ---
 
-## 2. Definisi Kolom (`TableColumnType`)
+## 2. Key Features
 
-```typescript
-export interface TableColumnType {
-  selector    : string;                                         // Nama properti objek data
-  label       : string | ReactNode;                             // Judul kolom di header
-  width      ?: string;                                         // Lebar kolom (misal: "10%" atau "120px")
-  sortable   ?: boolean;                                        // Izinkan pengurutan kolom ini
-  item       ?: (data: any) => string | ReactNode;              // Custom cell renderer (JSX kustom)
-}
-```
+*   **Row Selection**: Providing the `onSelect` callback automatically adds a checkbox column on the left side of the table, including a "Select All" checkbox in the header.
+*   **Sorting States**: Sortable columns display interactive caret icons indicating `asc` (ascending), `desc` (descending), or `none` (unsorted) states.
+*   **Loading Skeleton**: When `loading={true}`, the table displays a beautiful animated placeholder skeleton instead of empty rows.
 
 ---
 
-## 3. Fitur Utama
-
-### A. Seleksi Baris & Aksi Massal (`checks` & `actionBulking`)
-Jika properti `checks` dan `onChangeChecks` disediakan, kolom pertama tabel otomatis berubah menjadi checkbox. Tombol aksi massal (`actionBulking`) akan muncul secara dinamis di atas tabel ketika ada baris yang dicentang.
+## 3. Usage Example
 
 ```tsx
-actionBulking={(selectedIds) => (
-  <ButtonComponent
-    label={`Hapus ${selectedIds.length} Data`}
-    paint="danger"
-    onClick={() => handleBulkDelete(selectedIds)}
-  />
-)}
-```
-
-### B. Pengurutan Kolom (`sortBy` & `onChangeSortBy`)
-Kolom yang didefinisikan sebagai `sortable: true` akan menampilkan indikator panah pengurutan di samping judul kolom. Mengkliknya akan memicu callback `onChangeSortBy`.
-
----
-
-## 4. Contoh Penggunaan
-
-Berikut adalah contoh tabel sederhana menampilkan daftar pengguna:
-
-```tsx
-import React, { useState } from "react";
 import { TableComponent } from "@components";
+import { useState } from "react";
 
-export function SimpleUserList() {
-  const [sort, setSort] = useState(["created_at", "desc"]);
+export function BasicUserTable() {
+  const [sort, setSort] = useState({ key: "name", dir: "asc" });
 
   const columns = [
-    { selector: "name",  label: "Nama Pengguna", sortable: true },
-    { selector: "email", label: "Alamat Email" },
-    {
-      selector: "role",
-      label:    "Role",
-      item:     (row) => <span className="badge">{row.role}</span>
-    }
+    { key: "name", label: "Name", sortable: true },
+    { key: "email", label: "Email" },
+    { key: "role", label: "Role" }
   ];
 
   const data = [
-    { name: "Ahmad", email: "ahmad@mail.com", role: "Admin" },
-    { name: "Budi",  email: "budi@mail.com",  role: "User" }
+    { id: 1, name: "Alice", email: "alice@example.com", role: "Admin" },
+    { id: 2, name: "Bob", email: "bob@example.com", role: "Member" }
   ];
+
+  const handleSort = (key: string, direction: "asc" | "desc") => {
+    setSort({ key, dir: direction });
+    console.log(`Sorting by ${key} ${direction}`);
+  };
 
   return (
     <TableComponent
       columns={columns}
       data={data}
-      sortBy={sort}
-      onChangeSortBy={setSort}
-      noIndex={false}
+      onSort={handleSort}
+      actions={(row) => (
+        <button className="text-blue-500 hover:underline" onClick={() => alert(`View ${row.name}`)}>
+          View
+        </button>
+      )}
     />
   );
 }
 ```
-*Catatan untuk Agen: Gunakan `TableComponent` jika Anda membutuhkan kontrol tampilan tabel kustom secara manual. Jika membuat halaman manajemen data standar (CRUD), lebih disarankan menggunakan `TableSupervisionComponent` yang membungkus komponen ini dan otomatis menangani query data.*

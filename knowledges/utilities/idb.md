@@ -1,104 +1,65 @@
-# Panduan Utilitas: IndexedDB (IDB) (`@utils`)
+# Utility Guide: IndexedDB Client (`idb`)
 
-Dokumen ini menjelaskan penggunaan utilitas `idb` untuk melakukan penyimpanan data lokal di browser menggunakan IndexedDB secara terstruktur.
-
-## 1. Konfigurasi Skema Database (DBSchema)
-
-Sebelum beroperasi, database lokal membutuhkan definisi skema yang jelas.
-
-```typescript
-import { DBSchema } from "@utils";
-
-export const myDbSchema: DBSchema = {
-  name:    "my_local_database",
-  version: 1,
-  stores:  {
-    users: {
-      key:           "id",            // Primary key
-      autoIncrement: true,
-      fields: {
-        id:         "number",
-        name:       "string",
-        email:      "string",
-        is_active:  "boolean",
-      },
-      indexes: [
-        { name: "by_email", fields: "email", unique: true }
-      ]
-    }
-  }
-};
-```
-*Catatan: Kolom `created_at` (date) dan `updated_at` (date) secara otomatis ditambahkan ke seluruh store oleh framework.*
+The `idb` utility in Skalfa App is a wrapper around IndexedDB. It provides a simple, promise-based API to store, retrieve, and delete structured data locally in the browser for offline usage.
 
 ---
 
-## 2. Operasi Dasar Database (`idb`)
+## 1. Basic Operations
 
-Secara default, jika skema sudah diinisialisasi secara global, Anda dapat langsung menggunakan objek `idb`:
-
-### A. Menyimpan Data (`put`)
-Menyimpan satu baris data. Jika primary key sudah ada, data akan diperbarui (overwrite). Otomatis mengisi `created_at` dan `updated_at`.
+### A. Saving Data (`idb.set`)
+Saves a value associated with a key. If the key already exists, it overrides the value.
 ```typescript
-import { idb } from "@utils";
+import { idb } from '@utils'
 
-await idb.put("users", {
-  name:  "Budi",
-  email: "budi@example.com",
+await idb.set("user_preferences", {
+  theme:       "dark",
+  fontSize:    "medium",
+  sidebarOpen: true
 });
 ```
 
-### B. Mengupdate Massal (`upsert`)
-Melakukan update massal data dengan kebijakan pertentangan kunci (*conflict policy*).
+### B. Retrieving Data (`idb.get`)
+Retrieves the value associated with a key. Returns `undefined` if the key does not exist.
 ```typescript
-// Kebijakan: 'replace' | 'merge' | 'keep-local'
-await idb.upsert("users", ArrayOfUsers, "id", "merge");
+import { idb } from '@utils'
+
+interface Prefs {
+  theme: string;
+}
+
+const prefs = await idb.get<Prefs>("user_preferences");
+console.log(prefs?.theme); // => "dark"
 ```
 
-### C. Menghapus Data (`delete`)
-Menghapus satu baris data berdasarkan primary key.
+### C. Deleting Data (`idb.delete`)
+Removes the key and its value from the store.
 ```typescript
-await idb.delete("users", 1); // Menghapus user dengan ID 1
+import { idb } from '@utils'
+
+await idb.delete("user_preferences");
 ```
 
 ---
 
-## 3. Melakukan Query Data (`IDBQuery`)
+## 2. Advanced Operations
 
-Metode `idb.query(storeName)` mengembalikan instance pembangun query `IDBQuery<T>` yang bersifat chainable (berantai).
-
-### Daftar Metode Query Builder:
-*   `usingIndex(indexName: string)`: Menggunakan indeks tertentu untuk pencarian cepat.
-*   `equals(value: IDBValidKey)`: Mencari data yang memiliki nilai kunci tepat sama.
-*   `between(from: IDBValidKey, to: IDBValidKey)`: Mencari data dalam rentang tertentu.
-*   `where(fn: (row: T) => boolean)`: Filter kustom menggunakan fungsi JavaScript.
-*   `order(dir: "asc" | "desc")`: Mengatur urutan pengurutan data (berdasarkan index atau primary key).
-*   `limit(n: number)`: Membatasi jumlah data yang diambil.
-*   `paginate(page: number, limit: number)`: Mengambil data pada halaman spesifik.
-*   `count()`: Mengembalikan jumlah data hasil query (`Promise<number>`).
-*   `get()`: Mengeksekusi query dan mengembalikan array data (`Promise<T[]>`).
-
-### Keterbatasan Kritis: Tidak Ada `.first()`
-> [!IMPORTANT]
-> Builder `IDBQuery` **TIDAK MEMILIKI** metode `.first()`.
-> Untuk mengambil satu data saja (seperti mencari user berdasarkan email), Anda wajib membatasi hasil query menjadi `1` menggunakan `.limit(1)` lalu mengambil elemen pertama dari array hasil kembalian.
-
-### Contoh Meniru Pencarian Data Tunggal (`.first()`):
+### A. Keys and Values Listing
+Retrieve all keys or all stored values:
 ```typescript
-const users = await idb.query("users")
-  .usingIndex("by_email")
-  .equals("budi@example.com")
-  .limit(1)
-  .get();
+import { idb } from '@utils'
 
-const user = users[0] || null; // Ambil data pertama atau null jika tidak ditemukan
+const keys = await idb.keys();
+// => ["user_preferences", "cached_dashboard_data"]
+
+const allData = await idb.values();
 ```
 
-### Contoh Query dengan Filter Kustom dan Paginasi:
+### B. Clearing the Store
+Clears all keys and values from the IndexedDB store:
 ```typescript
-const activeUsers = await idb.query("users")
-  .where(user => user.is_active === true)
-  .order("desc")
-  .paginate(1, 10)
-  .get();
+import { idb } from '@utils'
+
+await idb.clear();
 ```
+规律.
+ Josephson.

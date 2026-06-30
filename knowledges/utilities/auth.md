@@ -1,71 +1,75 @@
-# Panduan Utilitas: Autentikasi (Auth) (`@utils`)
+# Utility Guide: Authentication Context (`auth`)
 
-Dokumen ini menjelaskan penggunaan utilitas `auth` untuk mengelola sesi masuk pengguna dan token otorisasi di Skalfa App.
-
-## 1. Sesi & Cookie Token
-
-*   **Penyimpanan**: Token otorisasi disimpan dalam cookie aman (`secure: true`) dengan masa aktif default 7 hari.
-*   **Nama Cookie**: Otomatis dibuat secara dinamis menggunakan slug nama aplikasi Next.js (ditambah akhiran `.user.token`).
+The `auth` context in Skalfa App manages the user's session state, login/logout flows, and permission guarding on the client-side.
 
 ---
 
-## 2. Metode yang Tersedia
+## 1. Accessing Auth State (`useAuth`)
 
-### A. Mengambil Token Otorisasi (`auth.getAccessToken`)
-Mengambil token aktif dari cookie (otomatis di-dekripsi).
-```typescript
-import { auth } from "@utils";
+Use the `useAuth` hook to access the authenticated user object and session actions:
 
-const token = auth.getAccessToken();
-if (token) {
-  console.log("User sedang masuk:", token);
+```tsx
+import { useAuth } from '@utils'
+
+export function DashboardHeader() {
+  const { user, logout } = useAuth();
+
+  return (
+    <div className="flex justify-between items-center p-4 border-b">
+      <span>Welcome, <strong>{user?.name}</strong>!</span>
+      <button onClick={logout} className="text-sm text-red-500">Log Out</button>
+    </div>
+  );
 }
-```
-
-### B. Menyimpan Token Otorisasi (`auth.setAccessToken`)
-Menyimpan token baru hasil login ke dalam cookie (otomatis di-enkripsi).
-```typescript
-// Format: auth.setAccessToken(token, expiredInDays?)
-auth.setAccessToken("my-jwt-token-from-backend", 7);
-```
-
-### C. Menghapus Sesi / Keluar (`auth.deleteAccessToken`)
-Menghapus cookie token (digunakan saat logout).
-```typescript
-auth.deleteAccessToken();
-```
-
-### D. Mengamankan Rute Halaman (`auth.check`)
-Memeriksa apakah token ada. Jika tidak ada token aktif, otomatis memicu pengalihan (*redirect*) ke halaman login `/auth/login`.
-```typescript
-import { auth } from "@utils";
-
-// Jalankan ini di tingkat atas halaman atau layout yang butuh proteksi login
-auth.check();
 ```
 
 ---
 
-## 3. Contoh Penggunaan dalam Layanan Login
+## 2. Guarding UI Elements by Permission
 
-```typescript
-// app/auth/_services/login.service.ts
-import { api, auth } from "@utils";
+You can conditionally render UI elements based on whether the logged-in user possesses specific permission keys:
 
-export async function loginUser(payload: any) {
-  const response = await api({
-    path:    "auth/login",
-    method:  "POST",
-    payload: payload
-  });
+```tsx
+import { useAuth } from '@utils'
 
-  if (response?.status === 200 && response.data?.token) {
-    // Simpan token ke cookie
-    auth.setAccessToken(response.data.token);
-    return { success: true };
-  }
+export function ProductActions({ product }: { product: any }) {
+  const { hasPermission } = useAuth();
 
-  return { success: false };
+  return (
+    <div className="flex gap-2">
+      {/* Always visible */}
+      <button>View Detail</button>
+
+      {/* Only visible to users with "300.03" (Update Product) permission */}
+      {hasPermission("300.03") && (
+        <button className="text-yellow-500">Edit Product</button>
+      )}
+
+      {/* Only visible to users with "300.04" (Delete Product) permission */}
+      {hasPermission("300.04") && (
+        <button className="text-red-500">Delete</button>
+      )}
+    </div>
+  );
 }
 ```
-*Catatan untuk Agen: Gunakan `auth.check()` di bagian paling atas berkas halaman (`page.tsx`) atau layout untuk halaman-halaman yang membutuhkan hak akses login (seperti dashboard).*
+
+---
+
+## 3. Route Guarding
+
+Page routes are guarded by wrapping them in the `Guard` component or using layout level checks:
+
+```tsx
+import { Guard } from '@components'
+import { BookingListStructure } from './_structures/booking-list.structure'
+
+export default function BookingsPage() {
+  return (
+    // Only allows users with permission "400.01" (View Bookings) to access this page
+    <Guard permission="400.01">
+      <BookingListStructure />
+    </Guard>
+  );
+}
+```

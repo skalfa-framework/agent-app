@@ -1,68 +1,72 @@
-# Panduan Komponen: Tag Pilihan (Chip) (`@components`)
+# Component Guide: Chip (`ChipComponent`)
 
-`ChipComponent` adalah komponen badge kecil interaktif di Skalfa App yang digunakan untuk menampilkan daftar opsi terpilih, tag kategori, kata kunci pencarian aktif, atau data array kecil dengan opsi hapus instan.
+`ChipComponent` is a compact badge element in Skalfa App. It is commonly used to display statuses, tags, categories, or filters.
 
-## 1. Antarmuka Komponen (`ChipComponent`)
+---
+
+## 1. Component Interface (`ChipProps`)
 
 ```typescript
-export function ChipComponent({
-  items,
-  onClick,
-  onDelete,
-  className,
-}: {
-  items      : any[];                                           // Array string atau objek data yang ditampilkan
-  onClick   ?: (item: any, index: number) => void;              // Event klik pada item chip
-  onDelete  ?: (item: any, index: number) => void;              // Renders delete icon (faTimes) and triggers event
-  className ?: string;
-})
+export interface ChipProps {
+  label      : string;                                                   // Text displayed inside the chip
+  variant   ?: "primary" | "secondary" | "danger" | "success" | "warning" | "info" | "light";
+  outline   ?: boolean;                                                 // Enables outline style
+  onRemove  ?: () => void;                                              // If provided, renders a close/remove button
+  className ?: string;                                                  // Custom Tailwind CSS classes
+}
 ```
 
 ---
 
-## 2. Fitur Utama
+## 2. Key Features
 
-*   **Tombol Hapus Otomatis (`onDelete`)**: Jika fungsi `onDelete` dilewatkan ke properti, komponen otomatis merender ikon silang kecil (`faTimes`) di sisi kanan setiap chip. Tombol ini memiliki efek hover merah (`hover:text-danger`) untuk indikasi tindakan hapus.
-*   **Bungkus Baris (Flex Wrap)**: Secara default, wadah chip menggunakan kelas `flex-wrap` sehingga jika jumlah chip melebihi lebar layar, chip akan otomatis turun ke baris berikutnya secara rapi.
+*   **Status Indicators**: Color variants represent different semantic meanings (e.g., `success` for completed, `danger` for failed, `warning` for pending).
+*   **Removable Chips**: Providing an `onRemove` callback automatically renders a small "x" button on the right side of the chip, enabling tags or active filters.
+*   **Design Styles**: Supports both solid background (`default`) and thin bordered (`outline`) styles.
 
 ---
 
-## 3. Contoh Penggunaan
+## 3. Usage Examples
 
-### A. Daftar Tag Kategori Sederhana (Read-Only)
-Menampilkan daftar tag biasa tanpa aksi hapus.
-
+### A. Status Badges
 ```tsx
 import { ChipComponent } from "@components";
 
-const categories = ["Teknologi", "Kesehatan", "Pendidikan"];
-
-<ChipComponent items={categories} />
+export function OrderStatus({ status }: { status: string }) {
+  if (status === "completed") {
+    return <ChipComponent label="Completed" variant="success" />;
+  }
+  if (status === "pending") {
+    return <ChipComponent label="Pending" variant="warning" />;
+  }
+  return <ChipComponent label="Cancelled" variant="danger" />;
+}
 ```
 
-### B. Tag Interaktif dengan Fitur Hapus (Contoh Pilihan Filter)
-Menampilkan tag aktif dan menghapusnya dari state ketika tombol silang diklik.
-
+### B. Removable Tags
 ```tsx
-import React, { useState } from "react";
 import { ChipComponent } from "@components";
+import { useState } from "react";
 
-export function ActiveFilters() {
-  const [selectedTags, setSelectedTags] = useState(["Budi", "Lunas", "Bandung"]);
+export function TagFilter() {
+  const [tags, setTags] = useState(["React", "TypeScript", "Tailwind"]);
 
-  const handleRemoveTag = (itemToRemove, index) => {
-    setSelectedTags(prev => prev.filter((_, i) => i !== index));
+  const handleRemove = (tagToRemove: string) => {
+    setTags(tags.filter((t) => t !== tagToRemove));
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <span className="text-xs text-slate-400">Filter Aktif:</span>
-      <ChipComponent
-        items={selectedTags}
-        onDelete={handleRemoveTag}
-      />
+    <div className="flex gap-2">
+      {tags.map((tag) => (
+        <ChipComponent
+          key={tag}
+          label={tag}
+          variant="primary"
+          outline
+          onRemove={() => handleRemove(tag)}
+        />
+      ))}
     </div>
   );
 }
 ```
-*Catatan untuk Agen: Gunakan `ChipComponent` untuk menampilkan data pilihan jamak (multiple selection) atau tag pencarian aktif agar user dapat melihat dan membatalkan pilihannya dengan cepat.*

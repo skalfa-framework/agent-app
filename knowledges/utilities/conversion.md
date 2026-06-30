@@ -1,95 +1,61 @@
-# Panduan Utilitas: Conversion (`@utils`)
+# Utility Guide: Conversion Helpers (`conversion`)
 
-Dokumen ini menjelaskan penggunaan utilitas `conversion` untuk memformat string, mata uang, dan tanggal di Skalfa App.
+The `conversion` utility in Skalfa App provides standard formatters for case conversion, currency, and date formatting.
 
-## 1. Pemformatan String (String Formatter)
+---
 
-Digunakan untuk mengubah format penulisan string (slug, snake_case, camelCase, PascalCase) secara otomatis.
+## 1. Case Conversions
 
-### A. Snake Case (`strSnake`)
-Mengubah string menjadi format snake_case.
+Useful for transforming API keys or component names:
+
+*   `conversion.strSnake("myVariableName")` => `"my_variable_name"`
+*   `conversion.strCamel("my_variable_name")` => `"myVariableName"`
+*   `conversion.strPascal("my_variable_name")` => `"MyVariableName"`
+*   `conversion.strSlug("My Project Name")` => `"my-project-name"`
+
+---
+
+## 2. Currency Formatting (`currency`)
+
+Formats numbers into localized currency strings. Defaults to Indonesian Rupiah (`Rp`).
+
 ```typescript
-import { conversion } from "@utils";
+import { conversion } from '@utils'
 
-conversion.strSnake("HelloWorld"); // Hasil: "hello_world"
-conversion.strSnake("hello-world"); // Hasil: "hello_world"
-```
+// Default: IDR (Rupiah)
+conversion.currency(50000);
+// => "Rp50.000"
 
-### B. Slug Case (`strSlug`)
-Mengubah string menjadi format url-slug (kebab-case).
-```typescript
-conversion.strSlug("Hello World"); // Hasil: "hello-world"
-```
-
-### C. Camel Case (`strCamel`)
-Mengubah string menjadi format camelCase.
-```typescript
-conversion.strCamel("hello_world"); // Hasil: "helloWorld"
-```
-
-### D. Pascal Case (`strPascal`)
-Mengubah string menjadi format PascalCase.
-```typescript
-conversion.strPascal("hello_world"); // Hasil: "HelloWorld"
-```
-
-### E. Jamak (`strPlural`)
-Mengubah kata benda bahasa Inggris menjadi bentuk jamak (plural).
-```typescript
-conversion.strPlural("category"); // Hasil: "categories"
-conversion.strPlural("user");     // Hasil: "users"
-```
-
-### F. Tunggal (`strSingular`)
-Membersihkan pemisah string dan mengubah huruf pertama menjadi kapital (biasanya digunakan untuk nama kelas/model).
-```typescript
-conversion.strSingular("booking_payments"); // Hasil: "BookingPayments"
+// Custom currency
+conversion.currency(100, "en-US", "USD");
+// => "$100.00"
 ```
 
 ---
 
-## 2. Pemformatan Mata Uang (Currency Formatter)
+## 3. Date Formatting (`date`)
 
-Memformat angka nominal menjadi mata uang Rupiah secara otomatis (membulatkan nilai desimal).
+Formats ISO date strings or Date objects. Under the hood, it uses native `Intl.DateTimeFormat` configured for the Indonesian locale (`id-ID`).
 
-### Fungsi: `currency(value, locale?, currency?)`
-*   `value`: Angka nominal yang akan diformat.
-*   `locale`: Default `"id-ID"`.
-*   `currency`: Default `"IDR"`.
-
-### Contoh Penggunaan:
 ```typescript
-import { conversion } from "@utils";
+import { conversion } from '@utils'
 
-const price = 150000;
-const formattedPrice = conversion.currency(price); 
-// Hasil: "Rp 150.000" (tergantung standardisasi format lokal)
+// Default format: "DD MMM YYYY"
+conversion.date("2026-06-30");
+// => "30 Jun 2026"
+
+// Custom format
+conversion.date("2026-06-30", "YYYY/MM/DD");
+// => "2026/06/30"
+
+// Date with day name
+conversion.date("2026-06-30", "dddd, DD MMMM YYYY");
+// => "Selasa, 30 Juni 2026"
 ```
 
----
-
-## 3. Pemformatan Tanggal (Date Formatter)
-
-Memformat tanggal string menggunakan pustaka `moment.js`.
-
-### Fungsi: `date(dateString, format?)`
-*   `dateString`: String tanggal ISO atau format standar lainnya.
-*   `format`: Format output moment.js (default: `"DD MMM YYYY"`).
-
-### Contoh Penggunaan:
-```typescript
-import { conversion } from "@utils";
-
-const isoDate = "2026-06-28T12:00:00.000Z";
-
-conversion.date(isoDate); 
-// Hasil: "28 Jun 2026"
-
-conversion.date(isoDate, "YYYY-MM-DD HH:mm");
-// Hasil: "2026-06-28 12:00"
-```
-```tsx
-// Penggunaan langsung di dalam JSX komponen:
-<span>{conversion.date(item.created_at)}</span>
-```
-`moment.js` digunakan di bawah kap secara otomatis.
+### Supported Tokens:
+*   `YYYY` / `YY`: 4 or 2 digit year.
+*   `MMMM` / `MMM` / `MM` / `M`: Month name (full, short), 2 digit, or 1 digit.
+*   `DD` / `D`: 2 or 1 digit day.
+*   `dddd` / `ddd`: Day name (full, short).
+*   `HH` / `mm` / `ss`: Hours, minutes, and seconds.

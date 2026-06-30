@@ -1,61 +1,48 @@
-# Panduan Utilitas: Validasi Formulir Frontend (Validation) (`@utils`)
+# Utility Guide: Input Validation (`validation`)
 
-`validation` adalah mesin validasi data mandiri di sisi frontend Skalfa App. Utilitas ini digunakan secara internal oleh komponen form (seperti `InputComponent` dan `FormSupervisionComponent`) untuk memvalidasi input secara real-time sebelum dikirimkan ke backend atau disimpan ke IndexedDB.
-
-## 1. Cara Kerja `validation`
-
-*   **Format Aturan**: Mendukung aturan validasi dalam bentuk array string (`string[]`) atau string tunggal dipisahkan pipa (`"required|email|min:8"`).
-*   **Response**: Metode evaluasi mengembalikan objek hasil berupa `{ valid: boolean, message: string }`.
+The `validation` utility in Skalfa App provides client-side input validation. It is designed to match the backend's validation rules, ensuring a consistent user experience.
 
 ---
 
-## 2. Daftar Aturan Validasi yang Didukung
+## 1. Core Validation Function (`validate`)
 
-*   `required`: Nilai tidak boleh kosong atau berupa array kosong.
-*   `numeric`: Nilai harus berupa karakter angka.
-*   `email`: Nilai harus berupa format email yang valid.
-*   `url`: Nilai harus berupa format URL yang valid.
-*   `date`: Nilai harus berupa tanggal yang valid.
-*   `boolean`: Nilai harus bernilai boolean.
-*   `min:N`: Panjang teks minimal `N` karakter (contoh: `min:8`).
-*   `max:N`: Panjang teks maksimal `N` karakter (contoh: `max:50`).
-*   `between:MIN,MAX`: Panjang teks harus antara `MIN` dan `MAX` karakter (contoh: `between:3,20`).
-*   `in:VAL1,VAL2,...`: Nilai harus berupa salah satu dari opsi yang ditentukan (contoh: `in:admin,member`).
-*   `not_in:VAL1,VAL2,...`: Nilai tidak boleh berupa salah satu dari opsi yang ditentukan.
-
----
-
-## 3. Contoh Penggunaan Mandiri
-
-Jika Anda menulis input kustom secara manual di luar `FormSupervisionComponent`, Anda dapat memvalidasi nilai input secara manual menggunakan utilitas ini:
+Checks a data object against a set of validation rules and returns an object containing error arrays.
 
 ```typescript
-import { validation } from "@utils";
+import { validate } from '@utils'
 
-const checkEmail = validation.check({
-  value: "budi@email",
-  rules: "required|email"
-});
+const data = {
+  username: "ab",
+  email:    "invalid-email"
+};
 
-if (!checkEmail.valid) {
-  console.log("Validasi Gagal:", checkEmail.message); 
-  // Output: "Format email tidak valid" (sesuai bahasa lokalisasi)
+const rules = {
+  username: ["required", "min:3"],
+  email:    ["required", "email"]
+};
+
+const errors = validate(data, rules);
+/*
+Returns:
+{
+  username: ["The username must be at least 3 characters."],
+  email:    ["The email must be a valid email address."]
 }
+If there are no errors, it returns an empty object: {}
+*/
 ```
 
 ---
 
-## 4. Lokalisasi Pesan Kesalahan (`validation.langs`)
-Pesan kesalahan otomatis disajikan dalam Bahasa Indonesia secara default melalui berkas konfigurasi bahasa internal:
-*   `required`: `"Wajib diisi"`
-*   `email`: `"Format email tidak valid"`
-*   `numeric`: `"Harus berupa angka"`
-*   `min`: `"Minimal [min] karakter"`
-*   `max`: `"Maksimal [max] karakter"`
-*   `between`: `"Harus diantara [min] - [max] karakter"`
-*   `in`: `"Harus salah satu dari [in]"`
-```typescript
-// Contoh pesan kesalahan dinamis:
-// Jika aturan "min:8" dilanggar, pesan otomatis disesuaikan menjadi "Minimal 8 karakter"
-```
-*Catatan untuk Agen: Selalu daftarkan aturan validasi pada properti `validations` di setiap objek field di dalam `FormSupervisionComponent` agar validasi ini berjalan secara otomatis.*
+## 2. Supported Validation Rules
+
+*   `required`: Field cannot be empty, null, or undefined.
+*   `email`: Field must be a valid email format.
+*   `min:N`: Minimum length (strings) or minimum value (numbers).
+*   `max:N`: Maximum length (strings) or maximum value (numbers).
+*   `numeric`: Field must contain only numbers.
+*   `boolean`: Field must be a boolean.
+*   `url`: Field must be a valid URL.
+*   `uuid`: Field must be a valid UUID.
+规律.
+ Josephson.
