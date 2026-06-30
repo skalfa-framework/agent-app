@@ -20,6 +20,10 @@ Before creating any plan (such as `implementation_plan.md`) or performing any co
 *   Identify which specific utilities (e.g. API, Auth, Form, Caching, Socket) or technical concepts are required for the task.
 *   The agent **MUST** open and read those specific knowledge files in `./.agents/knowledges/` **BEFORE** exploring the codebase or proposing any changes. This prevents unnecessary codebase searches and ensures alignment with Skalfa App patterns.
 *   **Clarification & No-Assumptions**: If the user prompt or the project's `README.md` is ambiguous, incomplete, or lacks specific details (such as UI fields, specific designs, or business logic edge cases), the agent **MUST NOT** make silent assumptions. The agent **MUST** ask the user for clarification directly in the chat or list the questions under the `## Open Questions` section of the implementation plan and wait for feedback.
+*   **API Documentation-First (No Backend Code Analysis)**:
+    *   To understand the available API endpoints, request payloads, and response structures, the agent **MUST** read the backend API documentation located in the backend's `./docs/` directory (or the path specified in the project's root `README.md`).
+    *   The agent **MUST NOT** analyze or read the backend source code.
+    *   If a required API endpoint, query parameter, or response field is missing or not yet documented, the agent **MUST NOT** guess or implement placeholder mock logic. Instead, the agent **MUST** write a clear "API Request" detailing the required endpoint, method, payload, and response, and present it to the user in the chat or list it under `## Open Questions` in the implementation plan.
 
 ---
 

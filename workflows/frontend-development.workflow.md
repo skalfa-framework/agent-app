@@ -44,6 +44,7 @@ All detailed logs, plans, and code diffs must be stored as separate files in `./
 *   The agent MUST read the project's root `README.md` to understand the overall project outline, UI modules, and design guidelines.
 *   Verify how the requested UI feature fits into the existing modules and outline described in `README.md`.
 *   **Knowledge Mapping**: The agent MUST read the Knowledge Registry in `./.agent/knowledges/registry.md`. Identify and read ONLY the specific knowledge files (e.g., `form-supervision.md`, `api.md`) that are directly relevant to the components and utilities required for the task. Reading unrelated knowledge files is forbidden to prevent context bloat.
+*   **API Documentation Alignment**: The agent **MUST** read the backend API documentation in the backend's `./docs/` folder to understand available endpoints and schemas. Reading the backend source code is forbidden. If any required endpoint or field is missing, draft an "API Request" detailing the requirements.
 
 
 ### Step 1.2 — Requirement Analysis & Clarification (Ask if Unclear)
